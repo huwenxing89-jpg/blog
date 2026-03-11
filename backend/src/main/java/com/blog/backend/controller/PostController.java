@@ -46,7 +46,7 @@ public class PostController {
         
         List<Tag> tags = postService.getPostTags(post.getId());
         if (tags != null) {
-            post.set("tags", tags);
+            post.setTags(tags);
         }
         
         return Result.success(post);

@@ -3,6 +3,7 @@ package com.blog.backend.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @TableName("posts")
@@ -46,4 +47,13 @@ public class Post {
     
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
+    
+    @TableField(exist = false)
+    private List<Tag> tags;
+    
+    @TableField(exist = false)
+    private Category category;
+    
+    @TableField(exist = false)
+    private Series series;
 }
