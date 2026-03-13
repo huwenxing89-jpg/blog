@@ -75,6 +75,28 @@ function Start-Service {
         Start-Sleep -Seconds 2
     }
 
+    # Diagnostic info
+    Write-Host "Working directory: $SCRIPT_DIR"
+    Write-Host "Checking for server.js..."
+    $serverJsPath = Join-Path $SCRIPT_DIR "server.js"
+    if (-not (Test-Path $serverJsPath)) {
+        Write-Host "Error: server.js not found at $serverJsPath"
+        Write-Host "Directory contents:"
+        Get-ChildItem $SCRIPT_DIR | ForEach-Object { Write-Host "  $_" }
+        exit 1
+    }
+    Write-Host "server.js found"
+
+    # Check Node.js
+    Write-Host "Checking Node.js..."
+    try {
+        $nodeVersion = & node --version 2>&1
+        Write-Host "Node.js version: $nodeVersion"
+    } catch {
+        Write-Host "Error: Node.js not found in PATH"
+        exit 1
+    }
+
     # Set environment variables
     $env:PORT = "3000"
     $env:NODE_ENV = "production"
@@ -82,15 +104,21 @@ function Start-Service {
     # Start new service
     Write-Host "Starting frontend service..."
 
-    $process = Start-Process -FilePath "node" -ArgumentList "server.js" -WindowStyle Hidden -PassThru -WorkingDirectory $SCRIPT_DIR -RedirectStandardOutput $LOG_FILE -RedirectStandardError (Join-Path $LOG_DIR "frontend-error.log")
+    $errorLogFile = Join-Path $LOG_DIR "frontend-error.log"
+    $process = Start-Process -FilePath "node" -ArgumentList "server.js" -WindowStyle Hidden -PassThru -WorkingDirectory $SCRIPT_DIR -RedirectStandardOutput $LOG_FILE -RedirectStandardError $errorLogFile
 
     # Wait a moment to ensure process starts
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 3
 
     # Check if process is still running
     $runningProcess = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
     if (-not $runningProcess) {
         Write-Host "Error: Frontend service failed to start"
+        # Show error log if exists
+        if (Test-Path $errorLogFile) {
+            Write-Host "Error log content:"
+            Get-Content $errorLogFile -Tail 20
+        }
         exit 1
     }
 
