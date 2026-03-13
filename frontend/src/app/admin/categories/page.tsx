@@ -185,7 +185,7 @@ export default function CategoriesPage() {
         </table>
         {categories.length === 0 && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            暂无分类，点击"新建分类"添加
+            暂无分类，点击&quot;新建分类&quot;添加
           </div>
         )}
       </div>

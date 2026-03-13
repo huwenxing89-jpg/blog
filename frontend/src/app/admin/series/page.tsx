@@ -179,7 +179,7 @@ export default function SeriesPage() {
       </div>
       {seriesList.length === 0 && (
         <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-          暂无系列，点击"新建系列"添加
+          暂无系列，点击&quot;新建系列&quot;添加
         </div>
       )}
     </div>

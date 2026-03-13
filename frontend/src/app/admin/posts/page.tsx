@@ -137,7 +137,7 @@ export default function PostsPage() {
         </table>
         {posts.length === 0 && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            暂无文章，点击"新建文章"添加
+            暂无文章，点击&quot;新建文章&quot;添加
           </div>
         )}
       </div>

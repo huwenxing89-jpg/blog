@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useSettings } from '@/components/providers/settings-provider';
+import { ClipPathImage } from '@/components/ClipPathImage';
 
 // ==================== 类型定义 ====================
 export interface Post {
@@ -310,27 +311,10 @@ function HeroSection() {
           </Link>
         </div>
 
-        {/* 装饰代码片段 - 仅科技风 */}
-        {isTech && (
-          <div className="mt-20 p-6 rounded-xl bg-[#0a0a0f] border border-gray-800/50 max-w-xl mx-auto font-['JetBrains_Mono'] text-sm text-left overflow-hidden">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500" />
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-            </div>
-            <pre className="text-gray-400">
-              <span className="text-purple-400">const</span> <span className="text-cyan-400">developer</span> = {'{'}
-              <br />
-              &nbsp;&nbsp;<span className="text-emerald-400">passion</span>: <span className="text-orange-400">'无限'</span>,
-              <br />
-              &nbsp;&nbsp;<span className="text-emerald-400">skills</span>: [<span className="text-orange-400">'React'</span>, <span className="text-orange-400">'Node'</span>, <span className="text-orange-400">'Rust'</span>],
-              <br />
-              &nbsp;&nbsp;<span className="text-emerald-400">learning</span>: <span className="text-purple-400">true</span>
-              <br />
-              {'}'};
-            </pre>
-          </div>
-        )}
+        {/* 图片 clip-path 效果 */}
+        <div className="mt-20 max-w-2xl mx-auto">
+          <ClipPathImage />
+        </div>
       </div>
 
       {/* 滚动提示 */}
@@ -465,14 +449,14 @@ function LatestPosts({ posts }: { posts: Post[] }) {
   const isTech = theme === 'tech';
 
   return (
-    <section className="relative py-24 px-6">
+    <section className="relative py-12 px-6">
       <div className={`absolute inset-0 bg-gradient-to-b ${
         isTech ? 'from-transparent via-cyan-500/5 to-transparent' : 'from-transparent via-violet-500/5 to-transparent'
       }`} />
 
       <div className="relative max-w-7xl mx-auto">
         {/* 标题 - 居中布局 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <div className={`w-1 h-8 bg-gradient-to-b ${
               isTech ? 'from-cyan-400 to-emerald-400' : 'from-violet-500 to-blue-500'
@@ -508,8 +492,8 @@ function LatestPosts({ posts }: { posts: Post[] }) {
           </div>
         </div>
 
-        {/* 文章网格 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* 文章网格 - 居中 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
           {posts.map((post, index) => (
             <PostCard key={post.id} post={post} index={index} />
           ))}
@@ -605,14 +589,14 @@ function SeriesSection({ series }: { series: Series[] }) {
   const isTech = theme === 'tech';
 
   return (
-    <section className="relative py-24 px-6">
+    <section className="relative py-12 px-6">
       <div className={`absolute inset-0 bg-gradient-to-b ${
         isTech ? 'from-transparent via-cyan-500/5 to-transparent' : 'from-transparent via-violet-500/5 to-transparent'
       }`} />
 
       <div className="relative max-w-7xl mx-auto">
         {/* 标题 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <div className={`w-1 h-8 bg-gradient-to-b ${
               isTech ? 'from-cyan-400 to-emerald-400' : 'from-violet-500 to-blue-500'
@@ -631,8 +615,8 @@ function SeriesSection({ series }: { series: Series[] }) {
           }`}>Series Collection</p>
         </div>
 
-        {/* 系列网格 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* 系列网格 - 居中 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
           {series.slice(0, 4).map((s, index) => (
             <SeriesCard key={s.id} series={s} index={index} />
           ))}
@@ -654,10 +638,10 @@ function TagCloud({ tags }: { tags: Tag[] }) {
   };
 
   return (
-    <section className="relative py-24 px-6">
+    <section className="relative py-12 px-6">
       <div className="max-w-5xl mx-auto">
         {/* 标题 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <div className={`w-1 h-8 bg-gradient-to-b ${
               isTech ? 'from-cyan-400 to-emerald-400' : 'from-violet-500 to-blue-500'

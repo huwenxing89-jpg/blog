@@ -180,7 +180,7 @@ export default function TagsPage() {
         </table>
         {tags.length === 0 && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            暂无标签，点击"新建标签"添加
+            暂无标签，点击&quot;新建标签&quot;添加
           </div>
         )}
       </div>
