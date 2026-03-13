@@ -23,10 +23,10 @@ function Stop-Service {
     } | Where-Object { $_ -match '^\d+$' } | Select-Object -Unique
 
     if ($port3000Processes) {
-        foreach ($pid in $port3000Processes) {
-            if ($pid -and $pid -ne "0") {
-                Write-Host "Killing process $pid using port 3000..."
-                Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+        foreach ($procId in $port3000Processes) {
+            if ($procId -and $procId -ne "0") {
+                Write-Host "Killing process $procId using port 3000..."
+                Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
             }
         }
         Start-Sleep -Seconds 2
