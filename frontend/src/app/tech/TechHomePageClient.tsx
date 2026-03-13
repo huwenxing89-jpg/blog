@@ -259,9 +259,9 @@ function HeroSection() {
           <pre className="text-gray-400">
             <span className="text-purple-400">const</span> <span className="text-cyan-400">developer</span> = {'{'}
             <br />
-            &nbsp;&nbsp;<span className="text-emerald-400">passion</span>: <span className="text-orange-400">'无限'</span>,
+            &nbsp;&nbsp;<span className="text-emerald-400">passion</span>: <span className="text-orange-400">&apos;无限&apos;</span>,
             <br />
-            &nbsp;&nbsp;<span className="text-emerald-400">skills</span>: [<span className="text-orange-400">'React'</span>, <span className="text-orange-400">'Node'</span>, <span className="text-orange-400">'Rust'</span>],
+            &nbsp;&nbsp;<span className="text-emerald-400">skills</span>: [<span className="text-orange-400">&apos;React&apos;</span>, <span className="text-orange-400">&apos;Node&apos;</span>, <span className="text-orange-400">&apos;Rust&apos;</span>],
             <br />
             &nbsp;&nbsp;<span className="text-emerald-400">learning</span>: <span className="text-purple-400">true</span>
             <br />
