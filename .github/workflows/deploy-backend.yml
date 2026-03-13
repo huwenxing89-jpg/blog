@@ -43,10 +43,13 @@ jobs:
           echo "目标路径: $DEPLOY_PATH"
 
           # 确保目标目录存在
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }; if (-not (Test-Path '${DEPLOY_PATH}\logs')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}\logs' -Force }\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }; if (-not (Test-Path '${DEPLOY_PATH}\\logs')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}\\logs' -Force }\""
 
-          # 停止现有的后端服务
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '${DEPLOY_PATH}\app.pid') { \`$pid = Get-Content '${DEPLOY_PATH}\app.pid'; \`$process = Get-Process -Id \`$pid -ErrorAction SilentlyContinue; if (\`$process) { Write-Host '停止后端服务...'; Stop-Process -Id \`$pid -Force; Start-Sleep -Seconds 2; Write-Host '后端服务已停止' } }; Remove-Item '${DEPLOY_PATH}\app.pid' -Force -ErrorAction SilentlyContinue\""
+          # 先上传停止脚本
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/stop-service.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
+
+          # 停止现有的后端服务（调用脚本）
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -File '${DEPLOY_PATH}\\stop-service.ps1'"
 
           # 复制 JAR 文件到服务器
           for i in 1 2 3; do
@@ -61,10 +64,9 @@ jobs:
 
           # 复制启动脚本到服务器
           sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/start-service.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
-          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/stop-service.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
           # 启动后端服务
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '${DEPLOY_PATH}\start-service.ps1'\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '${DEPLOY_PATH}\\start-service.ps1'\""
 
           echo "后端服务部署完成！"
 

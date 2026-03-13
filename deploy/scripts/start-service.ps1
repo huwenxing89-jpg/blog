@@ -3,11 +3,13 @@
 
 $ErrorActionPreference = "Stop"
 
-$JAR_FILE = "C:\inetpub\wwwroot\blog-backend\app.jar"
-$LOG_DIR = "C:\inetpub\wwwroot\blog-backend\logs"
-$LOG_FILE = "$LOG_DIR\backend.log"
-$ERROR_LOG = "$LOG_DIR\error.log"
-$PID_FILE = "C:\inetpub\wwwroot\blog-backend\app.pid"
+# 获取脚本所在目录作为基础路径
+$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+$JAR_FILE = Join-Path $SCRIPT_DIR "app.jar"
+$LOG_DIR = Join-Path $SCRIPT_DIR "logs"
+$LOG_FILE = Join-Path $LOG_DIR "backend.log"
+$ERROR_LOG = Join-Path $LOG_DIR "error.log"
+$PID_FILE = Join-Path $SCRIPT_DIR "app.pid"
 
 # 确保日志目录存在
 if (-not (Test-Path $LOG_DIR)) {

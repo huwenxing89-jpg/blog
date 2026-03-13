@@ -3,8 +3,10 @@
 
 $ErrorActionPreference = "Stop"
 
-$PID_FILE = "C:\inetpub\wwwroot\blog-backend\app.pid"
-$LOG_DIR = "C:\inetpub\wwwroot\blog-backend\logs"
+# 获取脚本所在目录作为基础路径
+$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+$PID_FILE = Join-Path $SCRIPT_DIR "app.pid"
+$LOG_DIR = Join-Path $SCRIPT_DIR "logs"
 
 # 检查 PID 文件是否存在
 if (-not (Test-Path $PID_FILE)) {
