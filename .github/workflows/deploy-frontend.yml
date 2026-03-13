@@ -79,21 +79,31 @@ jobs:
 
           # Create deployment package
           cd frontend
+
+          # First, copy static files to standalone/.next/static (required by Next.js standalone)
+          mkdir -p .next/standalone/.next/static
+          cp -r .next/static/* .next/standalone/.next/static/
+
+          # Copy public folder to standalone
+          cp -r public .next/standalone/
+
+          # Package from standalone directory - files will be at root level after extraction
+          cd .next/standalone
           if [ "$UPLOAD_MODULES" = "yes" ]; then
-            # Full deployment with node_modules
-            tar -czf ../frontend-deploy.tar.gz .next/standalone/.next .next/standalone/node_modules .next/standalone/server.js .next/standalone/package.json .next/static public
+            echo "Packaging with node_modules..."
+            tar -czf ~/frontend-deploy.tar.gz .next node_modules server.js package.json public
           else
-            # Incremental deployment without node_modules
-            tar -czf ../frontend-deploy.tar.gz .next/standalone/.next .next/standalone/server.js .next/standalone/package.json .next/static public
+            echo "Packaging without node_modules (using cached)..."
+            tar -czf ~/frontend-deploy.tar.gz .next server.js package.json public
           fi
 
           # Upload deployment package
           echo "Uploading deployment package..."
-          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=300 ../frontend-deploy.tar.gz ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=300 ~/frontend-deploy.tar.gz ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
           # Extract on server and save hash
           echo "Extracting files on server..."
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"cd '${DEPLOY_PATH}'; tar -xzf frontend-deploy.tar.gz; Remove-Item frontend-deploy.tar.gz -Force; '${LOCAL_HASH}' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"cd '${DEPLOY_PATH}'; Remove-Item -Recurse -Force .next,server.js,package.json,public -ErrorAction SilentlyContinue; tar -xzf frontend-deploy.tar.gz; Remove-Item frontend-deploy.tar.gz -Force; '${LOCAL_HASH}' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
 
           echo "Frontend deployment complete!"
 
