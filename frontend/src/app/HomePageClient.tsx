@@ -391,13 +391,12 @@ function PostCard({ post, index }: { post: Post; index: number }) {
                 className={`px-3 py-1 rounded-full text-xs font-medium ${
                   isTech
                     ? 'font-["Space_Grotesk"]'
-                    : ''
+                    : 'bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/20'
                 }`}
                 style={{
                   backgroundColor: isTech ? `${tag.color}20` : undefined,
                   color: isTech ? tag.color : undefined,
                 }}
-                className={isTech ? '' : 'bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/20'}
               >
                 {tag.name}
               </span>
