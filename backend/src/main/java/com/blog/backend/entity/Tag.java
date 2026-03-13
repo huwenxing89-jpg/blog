@@ -9,8 +9,11 @@ import java.time.LocalDateTime;
 public class Tag {
     @TableId(type = IdType.AUTO)
     private Long id;
-    
+
     private String name;
-    
+
     private String slug;
+
+    @TableField(exist = false)
+    private Integer postCount;
 }

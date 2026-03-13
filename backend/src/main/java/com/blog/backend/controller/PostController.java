@@ -13,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:3004", "http://localhost:3005"}, maxAge = 3600)
 public class PostController {
     
     @Autowired
@@ -40,15 +41,30 @@ public class PostController {
         if (post == null) {
             return Result.error(404, "文章不存在");
         }
-        
+
         post.setViewCount(post.getViewCount() + 1);
         postService.updatePost(post.getId(), post, null);
-        
+
         List<Tag> tags = postService.getPostTags(post.getId());
         if (tags != null) {
             post.setTags(tags);
         }
-        
+
+        return Result.success(post);
+    }
+
+    @GetMapping("/admin/{id}")
+    public Result<Post> getPostById(@PathVariable Long id) {
+        Post post = postService.getPostById(id);
+        if (post == null) {
+            return Result.error(404, "文章不存在");
+        }
+
+        List<Tag> tags = postService.getPostTags(post.getId());
+        if (tags != null) {
+            post.setTags(tags);
+        }
+
         return Result.success(post);
     }
     
@@ -60,7 +76,7 @@ public class PostController {
         post.setContent((String) params.get("content"));
         post.setExcerpt((String) params.get("excerpt"));
         post.setCoverImage((String) params.get("coverImage"));
-        post.setCategoryId(((Number) params.get("categoryId")).longValue());
+        post.setCategoryId(params.get("categoryId") != null ? ((Number) params.get("categoryId")).longValue() : null);
         post.setSeriesId(params.get("seriesId") != null ? ((Number) params.get("seriesId")).longValue() : null);
         post.setIsFeatured(false);
         post.setStatus((String) params.getOrDefault("status", "draft"));
@@ -84,16 +100,18 @@ public class PostController {
         post.setContent((String) params.get("content"));
         post.setExcerpt((String) params.get("excerpt"));
         post.setCoverImage((String) params.get("coverImage"));
-        post.setCategoryId(((Number) params.get("categoryId")).longValue());
+        post.setCategoryId(params.get("categoryId") != null ? ((Number) params.get("categoryId")).longValue() : null);
         post.setSeriesId(params.get("seriesId") != null ? ((Number) params.get("seriesId")).longValue() : null);
-        
+        post.setIsFeatured(params.get("isFeatured") != null ? (Boolean) params.get("isFeatured") : null);
+        post.setStatus((String) params.get("status"));
+
         List<Long> tagIds = null;
         if (params.get("tagIds") != null) {
             tagIds = ((List<Number>) params.get("tagIds")).stream()
                     .map(Number::longValue)
                     .collect(java.util.stream.Collectors.toList());
         }
-        
+
         Post updated = postService.updatePost(id, post, tagIds);
         return Result.success(updated);
     }

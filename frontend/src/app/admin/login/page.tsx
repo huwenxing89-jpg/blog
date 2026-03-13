@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 
@@ -11,6 +11,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+
+  // 强制移除科技风主题的 body 样式
+  useEffect(() => {
+    // 给 body 添加特殊 class 标识管理端
+    document.body.classList.add('admin-mode');
+    document.body.style.fontFamily = '-apple-system, BlinkMacSystemFont, Inter, Noto Sans SC, system-ui, sans-serif';
+    // 使用 !important 强制覆盖
+    document.body.style.setProperty('background', '#f3f4f6', 'important');
+
+    return () => {
+      document.body.classList.remove('admin-mode');
+      document.body.style.fontFamily = '';
+      document.body.style.removeProperty('background');
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,35 +43,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f3f4f6' }}>
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-6">博客管理后台</h1>
         
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md mb-4">
+          <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">邮箱</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">邮箱</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               required
             />
           </div>
-          
+
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">密码</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700">密码</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               required
             />
           </div>

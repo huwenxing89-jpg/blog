@@ -41,7 +41,15 @@ public class SeriesController {
     
     @DeleteMapping("/{id}")
     public Result<Void> deleteSeries(@PathVariable Long id) {
-        seriesService.deleteSeries(id);
-        return Result.success();
+        try {
+            seriesService.deleteSeries(id);
+            return Result.success();
+        } catch (Exception e) {
+            String message = e.getMessage();
+            if (message != null && message.contains("foreign key constraint")) {
+                return Result.error(400, "无法删除：该系列下还有文章，请先删除相关文章");
+            }
+            return Result.error(500, "删除失败: " + message);
+        }
     }
 }

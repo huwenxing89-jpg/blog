@@ -33,10 +33,23 @@ public class TagController {
     public Result<Tag> createTag(@RequestBody Tag tag) {
         return Result.success(tagService.createTag(tag));
     }
-    
+
+    @PutMapping("/{id}")
+    public Result<Tag> updateTag(@PathVariable Long id, @RequestBody Tag tag) {
+        return Result.success(tagService.updateTag(id, tag));
+    }
+
     @DeleteMapping("/{id}")
     public Result<Void> deleteTag(@PathVariable Long id) {
-        tagService.deleteTag(id);
-        return Result.success();
+        try {
+            tagService.deleteTag(id);
+            return Result.success();
+        } catch (Exception e) {
+            String message = e.getMessage();
+            if (message != null && message.contains("foreign key constraint")) {
+                return Result.error(400, "无法删除：该标签还被文章使用，请先移除相关标签");
+            }
+            return Result.error(500, "删除失败: " + message);
+        }
     }
 }

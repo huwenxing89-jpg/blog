@@ -4,6 +4,7 @@ import com.blog.backend.common.Result;
 import com.blog.backend.entity.Category;
 import com.blog.backend.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,7 +42,15 @@ public class CategoryController {
     
     @DeleteMapping("/{id}")
     public Result<Void> deleteCategory(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
-        return Result.success();
+        try {
+            categoryService.deleteCategory(id);
+            return Result.success();
+        } catch (Exception e) {
+            String message = e.getMessage();
+            if (message != null && message.contains("foreign key constraint")) {
+                return Result.error(400, "无法删除：该分类下还有文章，请先删除相关文章");
+            }
+            return Result.error(500, "删除失败: " + message);
+        }
     }
 }

@@ -23,6 +23,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     checkAuth();
   }, [checkAuth]);
 
+  // 强制移除科技风主题的 body 样式
+  useEffect(() => {
+    // 给 body 添加特殊 class 标识管理端
+    document.body.classList.add('admin-mode');
+    document.body.style.fontFamily = '-apple-system, BlinkMacSystemFont, Inter, Noto Sans SC, system-ui, sans-serif';
+    // 使用 !important 强制覆盖 - 始终使用浅色背景
+    document.body.style.setProperty('background', '#ffffff', 'important');
+    document.body.style.setProperty('color', '#1f2937', 'important');
+
+    return () => {
+      document.body.classList.remove('admin-mode');
+      document.body.style.fontFamily = '';
+      document.body.style.removeProperty('background');
+      document.body.style.removeProperty('color');
+    };
+  }, []);
+
   useEffect(() => {
     if (!isLoading && !user && pathname !== '/admin/login') {
       router.push('/admin/login');
@@ -37,14 +54,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!user || pathname === '/admin/login') {
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
+  if (!user) {
     return null;
   }
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-64 bg-gray-50 dark:bg-gray-800 border-r dark:border-gray-700">
-        <div className="p-4 border-b dark:border-gray-700">
+    <div className="min-h-screen flex admin-page" style={{
+      fontFamily: '-apple-system, BlinkMacSystemFont, Inter, Noto Sans SC, system-ui, sans-serif',
+      backgroundColor: '#ffffff'
+    }}>
+      <aside className="w-64 bg-gray-50 border-r">
+        <div className="p-4 border-b">
           <h1 className="text-xl font-bold">博客管理</h1>
         </div>
         
@@ -56,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className={`block py-2 px-4 rounded-md mb-1 ${
                 pathname === item.href
                   ? 'bg-primary text-white'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                  : 'hover:bg-gray-100'
               }`}
             >
               {item.label}
@@ -64,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ))}
         </nav>
 
-        <div className="absolute bottom-0 w-64 p-4 border-t dark:border-gray-700">
+        <div className="absolute bottom-0 w-64 p-4 border-t">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">{user.name}</span>
             <button

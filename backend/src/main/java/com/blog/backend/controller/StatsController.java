@@ -29,26 +29,26 @@ public class StatsController {
         publishedWrapper.eq("status", "published");
         publishedWrapper.eq("is_deleted", false);
         long totalPosts = postMapper.selectCount(publishedWrapper);
-        
+
         QueryWrapper<Post> featuredWrapper = new QueryWrapper<>();
         featuredWrapper.eq("is_featured", true);
         featuredWrapper.eq("is_deleted", false);
         long featuredPosts = postMapper.selectCount(featuredWrapper);
-        
+
         QueryWrapper<Post> viewCountWrapper = new QueryWrapper<>();
         viewCountWrapper.eq("status", "published");
         viewCountWrapper.eq("is_deleted", false);
         List<Post> posts = postMapper.selectList(viewCountWrapper);
         int totalViews = posts.stream().mapToInt(Post::getViewCount).sum();
-        
+
         long totalCategories = categoryMapper.selectCount(null);
-        
+
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalPosts", totalPosts);
         stats.put("featuredPosts", featuredPosts);
         stats.put("totalViews", totalViews);
         stats.put("totalCategories", totalCategories);
-        
+
         return Result.success(stats);
     }
 }

@@ -9,15 +9,18 @@ import java.time.LocalDateTime;
 public class Series {
     @TableId(type = IdType.AUTO)
     private Long id;
-    
+
     private String name;
-    
+
     private String slug;
-    
+
     private String description;
-    
+
     private String coverImage;
-    
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
+
+    @TableField(exist = false)
+    private Integer postCount;
 }
