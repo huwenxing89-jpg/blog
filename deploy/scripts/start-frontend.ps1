@@ -82,7 +82,7 @@ function Start-Service {
     # Start new service
     Write-Host "Starting frontend service..."
 
-    $process = Start-Process -FilePath "node" -ArgumentList "server.js" -NoNewWindow -PassThru -WorkingDirectory $SCRIPT_DIR -RedirectStandardOutput $LOG_FILE -RedirectStandardError (Join-Path $LOG_DIR "frontend-error.log")
+    $process = Start-Process -FilePath "node" -ArgumentList "server.js" -WindowStyle Hidden -PassThru -WorkingDirectory $SCRIPT_DIR -RedirectStandardOutput $LOG_FILE -RedirectStandardError (Join-Path $LOG_DIR "frontend-error.log")
 
     # Wait a moment to ensure process starts
     Start-Sleep -Seconds 2
