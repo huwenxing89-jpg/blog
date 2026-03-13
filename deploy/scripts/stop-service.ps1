@@ -1,40 +1,39 @@
-# 后端服务停止脚本
-# 文件位置: C:\inetpub\wwwroot\blog-backend\stop-service.ps1
+# Backend Service Stop Script
 
 $ErrorActionPreference = "Stop"
 
-# 获取脚本所在目录作为基础路径
+# Get script directory
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PID_FILE = Join-Path $SCRIPT_DIR "app.pid"
 $LOG_DIR = Join-Path $SCRIPT_DIR "logs"
 
-# 检查 PID 文件是否存在
+# Check if PID file exists
 if (-not (Test-Path $PID_FILE)) {
-    Write-Host "没有运行的后端服务 (PID 文件不存在)"
+    Write-Host "No running backend service (PID file not found)"
     exit 0
 }
 
-# 读取 PID
+# Read PID
 $pid = Get-Content $PID_FILE -ErrorAction SilentlyContinue
 if (-not $pid) {
-    Write-Host "PID 文件为空"
+    Write-Host "PID file is empty"
     Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
     exit 0
 }
 
-# 检查进程是否存在
+# Check if process exists
 $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
 if (-not $process) {
-    Write-Host "进程已不存在 (PID: $pid)"
+    Write-Host "Process not found (PID: $pid)"
     Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
     exit 0
 }
 
-# 停止进程
-Write-Host "停止后端服务 (PID: $pid)..."
+# Stop process
+Write-Host "Stopping backend service (PID: $pid)..."
 Stop-Process -Id $pid -Force
 
-# 等待进程结束
+# Wait for process to end
 $maxWait = 10
 for ($i = 1; $i -le $maxWait; $i++) {
     $stillRunning = Get-Process -Id $pid -ErrorAction SilentlyContinue
@@ -42,17 +41,17 @@ for ($i = 1; $i -le $maxWait; $i++) {
         break
     }
     Start-Sleep -Seconds 1
-    Write-Host "等待进程结束... ($i/$maxWait)"
+    Write-Host "Waiting... ($i/$maxWait)"
 }
 
-# 强制结束（如果还在运行）
+# Force kill if still running
 $stillRunning = Get-Process -Id $pid -ErrorAction SilentlyContinue
 if ($stillRunning) {
-    Write-Host "强制结束进程..."
+    Write-Host "Force killing process..."
     Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
 }
 
-# 清理 PID 文件
+# Clean up PID file
 Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
 
-Write-Host "后端服务已停止"
+Write-Host "Backend service stopped"

@@ -41,29 +41,58 @@ jobs:
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
         run: |
-          # 安装 sshpass
+          # Install sshpass
           sudo apt-get update && sudo apt-get install -y sshpass
 
-          echo "开始部署前端到 $DEPLOY_SERVER..."
-          echo "目标路径: $DEPLOY_PATH"
+          echo "Deploying frontend to $DEPLOY_SERVER..."
+          echo "Target path: $DEPLOY_PATH"
 
-          # 确保目标目录存在
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }\""
+          # Ensure target directory exists
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }; if (-not (Test-Path '${DEPLOY_PATH}\\node_modules')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}\\node_modules' -Force }\""
 
-          # 清空目标目录内容（保留目录本身）
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-ChildItem -Path '${DEPLOY_PATH}' -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue\""
+          # Check if node_modules exists on server and get its hash
+          CACHE_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '${DEPLOY_PATH}\\node_modules' -and (Test-Path '${DEPLOY_PATH}\\.moduleshash')) { 'yes' } else { 'no' }\"")
 
-          # 创建部署包
+          # Calculate local package-lock.json hash
+          LOCAL_HASH=$(md5sum frontend/package-lock.json | cut -d' ' -f1)
+          echo "Local package-lock.json hash: $LOCAL_HASH"
+
+          # Get server hash if exists
+          if [ "$CACHE_EXISTS" = "yes" ]; then
+            SERVER_HASH=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '${DEPLOY_PATH}\\.moduleshash' -ErrorAction SilentlyContinue\"")
+            echo "Server cached hash: $SERVER_HASH"
+          else
+            SERVER_HASH=""
+          fi
+
+          # Decide whether to upload node_modules
+          UPLOAD_MODULES="no"
+          if [ "$CACHE_EXISTS" != "yes" ] || [ "$SERVER_HASH" != "$LOCAL_HASH" ]; then
+            UPLOAD_MODULES="yes"
+            echo "Dependencies changed or cache missing, will upload node_modules"
+          else
+            echo "Using cached node_modules"
+          fi
+
+          # Create deployment package
           cd frontend
-          tar -czf ../frontend-deploy.tar.gz .next public package.json package-lock.json next.config.js
+          if [ "$UPLOAD_MODULES" = "yes" ]; then
+            # Full deployment with node_modules
+            tar -czf ../frontend-deploy.tar.gz .next/standalone/.next .next/standalone/node_modules .next/standalone/server.js .next/standalone/package.json .next/static public
+          else
+            # Incremental deployment without node_modules
+            tar -czf ../frontend-deploy.tar.gz .next/standalone/.next .next/standalone/server.js .next/standalone/package.json .next/static public
+          fi
 
-          # 上传部署包
-          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=60 ../frontend-deploy.tar.gz ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
+          # Upload deployment package
+          echo "Uploading deployment package..."
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=300 ../frontend-deploy.tar.gz ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
-          # 在服务器上解压并安装依赖
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"cd '${DEPLOY_PATH}'; tar -xzf frontend-deploy.tar.gz; Remove-Item frontend-deploy.tar.gz; npm install --production\""
+          # Extract on server and save hash
+          echo "Extracting files on server..."
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"cd '${DEPLOY_PATH}'; tar -xzf frontend-deploy.tar.gz; Remove-Item frontend-deploy.tar.gz -Force; '${LOCAL_HASH}' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
 
-          echo "前端部署完成！"
+          echo "Frontend deployment complete!"
 
       - name: Restart Frontend Service
         env:
@@ -72,19 +101,38 @@ jobs:
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
         run: |
-          # 重启前端服务（如果有运行中的服务）
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '${DEPLOY_PATH}\..\backend\frontend.pid') { \`$pid = Get-Content '${DEPLOY_PATH}\..\backend\frontend.pid' -ErrorAction SilentlyContinue; if (\`$pid) { Stop-Process -Id \`$pid -Force -ErrorAction SilentlyContinue } }; cd '${DEPLOY_PATH}'; Start-Process -FilePath 'npm' -ArgumentList 'start' -NoNewWindow -PassThru | ForEach-Object { \`$_.Id | Out-File '${DEPLOY_PATH}\..\backend\frontend.pid' }\""
+          # Upload start script if not exists
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/start-frontend.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
-          echo "前端服务已重启"
+          # Stop existing service
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -File '${DEPLOY_PATH}\\start-frontend.ps1' -Action Stop"
+
+          # Start new service
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -File '${DEPLOY_PATH}\\start-frontend.ps1' -Action Start"
+
+          echo "Frontend service restarted"
 
       - name: Health Check
         env:
           DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
         run: |
-          echo "检查部署状态..."
+          echo "Checking frontend service status..."
+          MAX_RETRIES=30
+          RETRY_INTERVAL=5
 
-          # 检查文件是否成功部署
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '${DEPLOY_PATH}\.next') { Write-Host '✅ 部署成功：.next 目录存在'; exit 0 } else { Write-Host '❌ 部署失败：.next 目录不存在'; exit 1 }\""
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_CODE=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000 2>/dev/null || echo 000")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Frontend service started successfully!"
+              exit 0
+            fi
+
+            echo "Waiting for frontend service... ($i/$MAX_RETRIES)"
+            sleep $RETRY_INTERVAL
+          done
+
+          echo "Frontend service startup timeout, please check logs"
+          exit 0
