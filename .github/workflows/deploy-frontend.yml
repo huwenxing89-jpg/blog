@@ -47,11 +47,14 @@ jobs:
           echo "Deploying frontend to $DEPLOY_SERVER..."
           echo "Target path: $DEPLOY_PATH"
 
-          # Ensure target directory exists
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }; if (-not (Test-Path '${DEPLOY_PATH}\\node_modules')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}\\node_modules' -Force }\""
+          # Upload helper scripts first
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/check-cache.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
-          # Check if node_modules exists on server and get its hash
-          CACHE_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '${DEPLOY_PATH}\\node_modules' -and (Test-Path '${DEPLOY_PATH}\\.moduleshash')) { 'yes' } else { 'no' }\"")
+          # Ensure target directory exists
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }\""
+
+          # Check if node_modules cache exists
+          CACHE_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -File '${DEPLOY_PATH}\\check-cache.ps1' -Path '${DEPLOY_PATH}'")
 
           # Calculate local package-lock.json hash
           LOCAL_HASH=$(md5sum frontend/package-lock.json | cut -d' ' -f1)
@@ -101,14 +104,14 @@ jobs:
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
         run: |
-          # Upload start script if not exists
+          # Upload start script
           sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/start-frontend.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
           # Stop existing service
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -File '${DEPLOY_PATH}\\start-frontend.ps1' -Action Stop"
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '${DEPLOY_PATH}\\start-frontend.ps1' -Action Stop\""
 
           # Start new service
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -File '${DEPLOY_PATH}\\start-frontend.ps1' -Action Start"
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '${DEPLOY_PATH}\\start-frontend.ps1' -Action Start\""
 
           echo "Frontend service restarted"
 
