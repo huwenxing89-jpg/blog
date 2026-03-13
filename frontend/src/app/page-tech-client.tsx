@@ -589,7 +589,7 @@ function Footer() {
           {/* 右侧版权 */}
           <div className="flex flex-col items-center md:items-end gap-2">
             <p className="font-['Space_Grotesk'] text-sm text-gray-600">
-              © 2024 Dev.Log
+              © 2026 Huwx.BLOG
             </p>
             <p className="font-['JetBrains_Mono'] text-xs text-gray-700">
               Built with Next.js &amp; Spring Boot

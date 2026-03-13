@@ -390,7 +390,7 @@ function PostsPageContent() {
               ? 'font-["Space_Grotesk"] text-gray-600'
               : 'text-gray-600 dark:text-gray-400'
           }`}>
-            © 2024 Dev.Log
+            © 2026 Huwx.BLOG
           </p>
           <p className={`text-xs ${
             isTech

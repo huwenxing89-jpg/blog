@@ -5,7 +5,7 @@ import { ThemeEffectsWrapper } from '@/components/ThemeEffectsWrapper';
 import { SettingsProvider } from '@/components/providers/settings-provider';
 
 export const metadata: Metadata = {
-  title: '我的技术博客',
+  title: 'huwx BLOG',
   description: '一个专注于技术分享的博客',
 };
 
