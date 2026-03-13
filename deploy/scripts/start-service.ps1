@@ -47,8 +47,8 @@ $arguments = @(
     "--server.port=8088"
 )
 
-# Start process
-$process = Start-Process -FilePath "java" -ArgumentList $arguments -NoNewWindow -PassThru -RedirectStandardOutput $LOG_FILE -RedirectStandardError $ERROR_LOG
+# Start process with new window to keep it running
+$process = Start-Process -FilePath "java" -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput $LOG_FILE -RedirectStandardError $ERROR_LOG
 
 # Wait a moment to ensure process starts
 Start-Sleep -Seconds 2

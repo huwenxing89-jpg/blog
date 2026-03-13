@@ -23,29 +23,29 @@ function Stop-Service {
     }
 
     # Read PID
-    $pid = Get-Content $PID_FILE -ErrorAction SilentlyContinue
-    if (-not $pid) {
+    $savedPid = Get-Content $PID_FILE -ErrorAction SilentlyContinue
+    if (-not $savedPid) {
         Write-Host "PID file is empty"
         Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
         return
     }
 
     # Check if process exists
-    $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
+    $process = Get-Process -Id $savedPid -ErrorAction SilentlyContinue
     if (-not $process) {
-        Write-Host "Process not found (PID: $pid)"
+        Write-Host "Process not found (PID: $savedPid)"
         Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
         return
     }
 
     # Stop process
-    Write-Host "Stopping frontend service (PID: $pid)..."
-    Stop-Process -Id $pid -Force
+    Write-Host "Stopping frontend service (PID: $savedPid)..."
+    Stop-Process -Id $savedPid -Force
 
     # Wait for process to end
     $maxWait = 10
     for ($i = 1; $i -le $maxWait; $i++) {
-        $stillRunning = Get-Process -Id $pid -ErrorAction SilentlyContinue
+        $stillRunning = Get-Process -Id $savedPid -ErrorAction SilentlyContinue
         if (-not $stillRunning) {
             break
         }
@@ -53,9 +53,9 @@ function Stop-Service {
     }
 
     # Force kill if still running
-    $stillRunning = Get-Process -Id $pid -ErrorAction SilentlyContinue
+    $stillRunning = Get-Process -Id $savedPid -ErrorAction SilentlyContinue
     if ($stillRunning) {
-        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+        Stop-Process -Id $savedPid -Force -ErrorAction SilentlyContinue
     }
 
     # Clean up PID file

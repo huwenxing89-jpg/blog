@@ -312,7 +312,7 @@ function HeroSection() {
         </div>
 
         {/* 图片 clip-path 效果 */}
-        <div className="mt-20">
+        <div className="mt-20 flex justify-center">
           <ClipPathImage />
         </div>
       </div>
