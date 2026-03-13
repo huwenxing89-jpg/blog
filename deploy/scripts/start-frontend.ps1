@@ -16,6 +16,22 @@ $LOG_FILE = Join-Path $SCRIPT_DIR "logs\frontend.log"
 $LOG_DIR = Join-Path $SCRIPT_DIR "logs"
 
 function Stop-Service {
+    # First, kill any process using port 3000
+    Write-Host "Checking for processes using port 3000..."
+    $port3000Processes = netstat -ano | Select-String ":3000\s" | ForEach-Object {
+        ($_ -split '\s+')[-1]
+    } | Where-Object { $_ -match '^\d+$' } | Select-Object -Unique
+
+    if ($port3000Processes) {
+        foreach ($pid in $port3000Processes) {
+            if ($pid -and $pid -ne "0") {
+                Write-Host "Killing process $pid using port 3000..."
+                Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+            }
+        }
+        Start-Sleep -Seconds 2
+    }
+
     # Check if PID file exists
     if (-not (Test-Path $PID_FILE)) {
         Write-Host "No running frontend service (PID file not found)"
