@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import request from '@/lib/request';
+import { useSettings } from '@/components/providers/settings-provider';
 
 interface Post {
   id: number;
@@ -14,7 +15,8 @@ interface Post {
   coverImage: string;
   category: { name: string; slug: string };
   tags: { name: string; slug: string; color?: string }[];
-  publishedAt: string;
+  publishedAt?: string;
+  createdAt: string;
   viewCount?: number;
   series?: { name: string; slug: string };
 }
@@ -141,6 +143,7 @@ function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { settings } = useSettings();
 
   useEffect(() => {
     setMounted(true);
@@ -186,7 +189,7 @@ function Navigation() {
               ? 'font-["Orbitron"] text-white'
               : 'text-gray-900 dark:text-white'
           }`}>
-            DEV.LOG
+            {settings.siteName}
           </span>
         </Link>
 
@@ -403,5 +406,20 @@ function PostsPageContent() {
 }
 
 export default function PostsPage() {
-  return <PostsPageContent />;
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-6">
+          <div className="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400">加载中...</p>
+        </div>
+      </div>
+    }>
+      <PostsPageContent />
+    </Suspense>
+  );
 }

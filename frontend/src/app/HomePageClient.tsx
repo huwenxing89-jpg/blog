@@ -192,7 +192,7 @@ function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-20">
       {/* 背景渐变 */}
       {isTech ? (
         <>
@@ -312,7 +312,7 @@ function HeroSection() {
         </div>
 
         {/* 图片 clip-path 效果 */}
-        <div className="mt-20 max-w-2xl mx-auto">
+        <div className="mt-20">
           <ClipPathImage />
         </div>
       </div>
@@ -338,7 +338,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
   return (
     <Link
       href={`/posts/${post.slug}`}
-      className="group block relative"
+      className="group block relative w-full max-w-sm"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       <div className={`relative p-6 rounded-2xl backdrop-blur-sm overflow-hidden transition-all duration-500 ${
@@ -454,7 +454,7 @@ function LatestPosts({ posts }: { posts: Post[] }) {
         isTech ? 'from-transparent via-cyan-500/5 to-transparent' : 'from-transparent via-violet-500/5 to-transparent'
       }`} />
 
-      <div className="relative max-w-7xl mx-auto">
+      <div className="relative max-w-5xl mx-auto">
         {/* 标题 - 居中布局 */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -493,7 +493,7 @@ function LatestPosts({ posts }: { posts: Post[] }) {
         </div>
 
         {/* 文章网格 - 居中 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+        <div className="flex flex-wrap justify-center gap-6">
           {posts.map((post, index) => (
             <PostCard key={post.id} post={post} index={index} />
           ))}
@@ -527,7 +527,7 @@ function SeriesCard({ series, index }: { series: Series; index: number }) {
   return (
     <Link
       href={`/series/${series.slug}`}
-      className="group relative block"
+      className="group relative block w-full max-w-xs"
     >
       <div className={`relative h-full p-6 rounded-2xl backdrop-blur-sm overflow-hidden transition-all duration-500 ${
         isTech
@@ -594,7 +594,7 @@ function SeriesSection({ series }: { series: Series[] }) {
         isTech ? 'from-transparent via-cyan-500/5 to-transparent' : 'from-transparent via-violet-500/5 to-transparent'
       }`} />
 
-      <div className="relative max-w-7xl mx-auto">
+      <div className="relative max-w-5xl mx-auto">
         {/* 标题 */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -616,7 +616,7 @@ function SeriesSection({ series }: { series: Series[] }) {
         </div>
 
         {/* 系列网格 - 居中 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
+        <div className="flex flex-wrap justify-center gap-6">
           {series.slice(0, 4).map((s, index) => (
             <SeriesCard key={s.id} series={s} index={index} />
           ))}
@@ -674,13 +674,13 @@ function TagCloud({ tags }: { tags: Tag[] }) {
                     : `bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-violet-500/50 hover:shadow-lg ${size.padding} shadow-sm`
                 }`}
               >
-                <span className={`font-medium transition-colors ${size.fontSize} ${
-                  isTech
-                    ? 'font-["Space_Grotesk"]'
-                    : ''
-                }`}
-                style={isTech ? { color: tag.color } : undefined}
-                className={isTech ? '' : 'text-gray-700 dark:text-gray-300'}
+                <span
+                  className={`font-medium transition-colors ${size.fontSize} ${
+                    isTech
+                      ? 'font-["Space_Grotesk"]'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                  style={isTech ? { color: tag.color } : undefined}
                 >
                   {tag.name}
                 </span>

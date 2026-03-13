@@ -6,6 +6,7 @@ import { use } from 'react';
 import { useTheme } from 'next-themes';
 import request from '@/lib/request';
 import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer';
+import { useSettings } from '@/components/providers/settings-provider';
 
 interface Post {
   id: number;
@@ -116,6 +117,7 @@ function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { settings } = useSettings();
 
   useEffect(() => {
     setMounted(true);
@@ -160,7 +162,7 @@ function Navigation() {
               ? 'font-["Orbitron"] text-white'
               : 'text-gray-900 dark:text-white'
           }`}>
-            DEV.LOG
+            {settings.siteName}
           </span>
         </Link>
 

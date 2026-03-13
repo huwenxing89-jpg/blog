@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useRef, useEffect, useCallback } from 'react';
-import Image from 'next/image';
-import { useTheme } from 'next-themes';
+import { useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 
 // 图片 clip-path 悬停效果组件 - 鼠标移动时揭示底层图片
 export function ClipPathImage() {
@@ -10,7 +10,7 @@ export function ClipPathImage() {
   const topLayerRef = useRef<HTMLDivElement>(null);
   const rectRef = useRef<DOMRect | null>(null);
   const { theme } = useTheme();
-  const isTech = theme === 'tech';
+  const isTech = theme === "tech";
 
   // 使用 useCallback 和 requestAnimationFrame 优化性能
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -25,7 +25,7 @@ export function ClipPathImage() {
       0 100%,
       0 0,
       100% 0,
-      ${xPercent * 2}% ${yPercent * 0}%,
+      ${xPercent * 2}% 0%,
       0 ${yPercent * 2}%
     )`;
   }, []);
@@ -42,21 +42,21 @@ export function ClipPathImage() {
     updateRect();
 
     // 使用 passive 事件监听器提高性能
-    container.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('resize', updateRect, { passive: true });
-    window.addEventListener('scroll', updateRect, { passive: true });
+    container.addEventListener("mousemove", handleMouseMove, { passive: true });
+    window.addEventListener("resize", updateRect, { passive: true });
+    window.addEventListener("scroll", updateRect, { passive: true });
 
     return () => {
-      container.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', updateRect);
-      window.removeEventListener('scroll', updateRect);
+      container.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("resize", updateRect);
+      window.removeEventListener("scroll", updateRect);
     };
   }, [handleMouseMove]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-48 rounded-xl overflow-hidden cursor-crosshair"
+      className="relative w-[80vw] aspect-[1.6365] rounded-xl overflow-hidden cursor-crosshair mx-auto"
     >
       {/* 底层图片 */}
       <Image
@@ -71,7 +71,7 @@ export function ClipPathImage() {
         ref={topLayerRef}
         className="absolute inset-0 z-10"
         style={{
-          clipPath: 'polygon(0 100%, 0 0, 100% 0, 100% 0%, 0 100%)'
+          clipPath: "polygon(0 100%, 0 0, 100% 0, 100% 0%, 0 100%)",
         }}
       >
         <Image
