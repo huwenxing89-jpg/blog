@@ -1,0 +1,87 @@
+name: Deploy Frontend to Windows Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build project
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: npm run build
+
+      - name: Deploy to Windows Server
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
+        run: |
+          # 安装 sshpass
+          sudo apt-get update && sudo apt-get install -y sshpass
+
+          echo "开始部署前端到 $DEPLOY_SERVER..."
+          echo "目标路径: $DEPLOY_PATH"
+
+          # 确保目标目录存在
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }\""
+
+          # 清空目标目录内容（保留目录本身）
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-ChildItem -Path '${DEPLOY_PATH}' -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue\""
+
+          # 创建部署包
+          cd frontend
+          tar -czf ../frontend-deploy.tar.gz .next public package.json package-lock.json next.config.js
+
+          # 上传部署包
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=60 ../frontend-deploy.tar.gz ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
+
+          # 在服务器上解压并安装依赖
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"cd '${DEPLOY_PATH}'; tar -xzf frontend-deploy.tar.gz; Remove-Item frontend-deploy.tar.gz; npm install --production\""
+
+          echo "前端部署完成！"
+
+      - name: Restart Frontend Service
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
+        run: |
+          # 重启前端服务（如果有运行中的服务）
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '${DEPLOY_PATH}\..\backend\frontend.pid') { \`$pid = Get-Content '${DEPLOY_PATH}\..\backend\frontend.pid' -ErrorAction SilentlyContinue; if (\`$pid) { Stop-Process -Id \`$pid -Force -ErrorAction SilentlyContinue } }; cd '${DEPLOY_PATH}'; Start-Process -FilePath 'npm' -ArgumentList 'start' -NoNewWindow -PassThru | ForEach-Object { \`$_.Id | Out-File '${DEPLOY_PATH}\..\backend\frontend.pid' }\""
+
+          echo "前端服务已重启"
+
+      - name: Health Check
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
+        run: |
+          echo "检查部署状态..."
+
+          # 检查文件是否成功部署
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '${DEPLOY_PATH}\.next') { Write-Host '✅ 部署成功：.next 目录存在'; exit 0 } else { Write-Host '❌ 部署失败：.next 目录不存在'; exit 1 }\""

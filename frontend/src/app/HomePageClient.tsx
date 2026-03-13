@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
+import { useSettings } from '@/components/providers/settings-provider';
 
 // ==================== 类型定义 ====================
 export interface Post {
@@ -46,6 +47,7 @@ function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { settings } = useSettings();
 
   useEffect(() => {
     setMounted(true);
@@ -91,7 +93,7 @@ function Navigation() {
               ? 'font-["Orbitron"] text-white group-hover:text-cyan-400'
               : 'text-gray-900 dark:text-white'
           }`}>
-            DEV.LOG
+            {settings.siteName}
           </span>
         </Link>
 
@@ -160,6 +162,7 @@ function HeroSection() {
   const [cursorVisible, setCursorVisible] = useState(true);
   const [mounted, setMounted] = useState(false);
   const { theme } = useTheme();
+  const { settings } = useSettings();
   const isTech = mounted && theme === 'tech';
 
   useEffect(() => {
@@ -269,7 +272,7 @@ function HeroSection() {
             ? 'font-["Space_Grotesk"] text-gray-400'
             : 'text-gray-600 dark:text-gray-400'
         }`}>
-          专注于前后端技术、架构设计与工程实践。在这里分享代码、思考与成长。
+          {settings.siteDescription}
         </p>
 
         {/* CTA 按钮组 */}
@@ -719,6 +722,7 @@ function TagCloud({ tags }: { tags: Tag[] }) {
 // 页脚
 function Footer() {
   const { theme } = useTheme();
+  const { settings } = useSettings();
   const isTech = theme === 'tech';
 
   return (
@@ -747,7 +751,7 @@ function Footer() {
               </div>
               <span className={`text-lg font-bold ${
                 isTech ? 'font-["Orbitron"] text-white' : 'text-gray-900 dark:text-white'
-              }`}>DEV.LOG</span>
+              }`}>{settings.siteName}</span>
             </div>
             <p className={`text-sm ${
               isTech

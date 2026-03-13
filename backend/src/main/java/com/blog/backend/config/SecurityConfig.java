@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .antMatchers("/api/search").permitAll()
                 .antMatchers("/api/stats/**").permitAll()
                 .antMatchers("/api/upload/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/settings/**").permitAll()
                 .antMatchers("/uploads/**").permitAll()
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()

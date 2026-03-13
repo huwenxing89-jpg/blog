@@ -227,16 +227,19 @@ public class PostService {
 
         postMapper.updateById(existing);
 
-        QueryWrapper<PostTag> wrapper = new QueryWrapper<>();
-        wrapper.eq("post_id", id);
-        postTagMapper.delete(wrapper);
+        // 只有在明确传入 tagIds 时才更新标签关联
+        if (tagIds != null) {
+            QueryWrapper<PostTag> wrapper = new QueryWrapper<>();
+            wrapper.eq("post_id", id);
+            postTagMapper.delete(wrapper);
 
-        if (tagIds != null && !tagIds.isEmpty()) {
-            for (Long tagId : tagIds) {
-                PostTag postTag = new PostTag();
-                postTag.setPostId(id);
-                postTag.setTagId(tagId);
-                postTagMapper.insert(postTag);
+            if (!tagIds.isEmpty()) {
+                for (Long tagId : tagIds) {
+                    PostTag postTag = new PostTag();
+                    postTag.setPostId(id);
+                    postTag.setTagId(tagId);
+                    postTagMapper.insert(postTag);
+                }
             }
         }
 

@@ -1,0 +1,91 @@
+name: Deploy Backend to Windows Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: 'maven'
+          cache-dependency-path: backend/pom.xml
+
+      - name: Build with Maven
+        working-directory: backend
+        run: mvn clean package -DskipTests
+
+      - name: Deploy to Windows Server
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_BACKEND }}
+        run: |
+          # 安装 sshpass
+          sudo apt-get update && sudo apt-get install -y sshpass
+
+          echo "开始部署后端到 $DEPLOY_SERVER..."
+          echo "目标路径: $DEPLOY_PATH"
+
+          # 确保目标目录存在
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }; if (-not (Test-Path '${DEPLOY_PATH}\logs')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}\logs' -Force }\""
+
+          # 停止现有的后端服务
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '${DEPLOY_PATH}\app.pid') { \`$pid = Get-Content '${DEPLOY_PATH}\app.pid'; \`$process = Get-Process -Id \`$pid -ErrorAction SilentlyContinue; if (\`$process) { Write-Host '停止后端服务...'; Stop-Process -Id \`$pid -Force; Start-Sleep -Seconds 2; Write-Host '后端服务已停止' } }; Remove-Item '${DEPLOY_PATH}\app.pid' -Force -ErrorAction SilentlyContinue\""
+
+          # 复制 JAR 文件到服务器
+          for i in 1 2 3; do
+            if sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=300 backend/target/blog-backend-1.0.0.jar ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/app.jar; then
+              echo "JAR 文件上传成功"
+              break
+            else
+              echo "JAR 文件上传失败，重试 $i/3..."
+              sleep 5
+            fi
+          done
+
+          # 复制启动脚本到服务器
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/start-service.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/stop-service.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
+
+          # 启动后端服务
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '${DEPLOY_PATH}\start-service.ps1'\""
+
+          echo "后端服务部署完成！"
+
+      - name: Health Check
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+        run: |
+          echo "检查后端服务状态..."
+          MAX_RETRIES=30
+          RETRY_INTERVAL=10
+
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_CODE=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8088/api/posts 2>/dev/null || echo 000")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ 后端服务启动成功！"
+              exit 0
+            fi
+
+            echo "等待后端服务启动... ($i/$MAX_RETRIES)"
+            sleep $RETRY_INTERVAL
+          done
+
+          echo "⚠️ 后端服务启动超时，请检查日志"
+          exit 0

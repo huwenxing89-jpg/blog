@@ -1,23 +1,81 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import request from '@/lib/request';
+
+interface Settings {
+  siteName: string;
+  siteDescription: string;
+  siteUrl: string;
+  postsPerPage: number;
+  enableComments: boolean;
+  analyticsId: string;
+}
+
+const DEFAULT_SETTINGS: Settings = {
+  siteName: '我的技术博客',
+  siteDescription: '分享技术知识与学习心得',
+  siteUrl: 'https://example.com',
+  postsPerPage: 10,
+  enableComments: true,
+  analyticsId: '',
+};
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState({
-    siteName: '我的技术博客',
-    siteDescription: '分享技术知识与学习心得',
-    siteUrl: 'https://example.com',
-    postsPerPage: 10,
-    enableComments: true,
-    analyticsId: '',
-  });
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // 从后端加载设置
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await request.get('/settings');
+        if (res.data) {
+          setSettings({
+            siteName: res.data.siteName || DEFAULT_SETTINGS.siteName,
+            siteDescription: res.data.siteDescription || DEFAULT_SETTINGS.siteDescription,
+            siteUrl: res.data.siteUrl || DEFAULT_SETTINGS.siteUrl,
+            postsPerPage: parseInt(res.data.postsPerPage) || DEFAULT_SETTINGS.postsPerPage,
+            enableComments: res.data.enableComments === 'true',
+            analyticsId: res.data.analyticsId || DEFAULT_SETTINGS.analyticsId,
+          });
+        }
+      } catch (e) {
+        console.error('加载设置失败:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 实现保存设置
-    console.log('保存设置:', settings);
-    alert('设置已保存');
+    setSaving(true);
+    try {
+      await request.put('/settings', settings);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      console.error('保存设置失败:', e);
+      alert('保存失败，请重试');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl">
+        <h1 className="text-3xl font-bold mb-6">系统设置</h1>
+        <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+          加载中...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl">
@@ -99,25 +157,22 @@ export default function SettingsPage() {
         </section>
 
         <div className="flex justify-end gap-4">
+          {saved && (
+            <span className="px-4 py-2 text-green-600">设置已保存</span>
+          )}
           <button
             type="button"
-            onClick={() => setSettings({
-              siteName: '我的技术博客',
-              siteDescription: '分享技术知识与学习心得',
-              siteUrl: 'https://example.com',
-              postsPerPage: 10,
-              enableComments: true,
-              analyticsId: '',
-            })}
+            onClick={() => setSettings(DEFAULT_SETTINGS)}
             className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
           >
             重置
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+            disabled={saving}
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            保存设置
+            {saving ? '保存中...' : '保存设置'}
           </button>
         </div>
       </form>

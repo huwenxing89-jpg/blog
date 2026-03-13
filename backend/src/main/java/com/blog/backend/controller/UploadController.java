@@ -52,9 +52,12 @@ public class UploadController {
             // 生成新文件名
             String newFilename = UUID.randomUUID().toString() + extension;
 
+            // 获取绝对路径
+            Path basePath = Paths.get(uploadPath).toAbsolutePath();
+
             // 按日期分目录存储
             String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM"));
-            Path dirPath = Paths.get(uploadPath, datePath);
+            Path dirPath = basePath.resolve(datePath);
             if (!Files.exists(dirPath)) {
                 Files.createDirectories(dirPath);
             }
@@ -71,6 +74,7 @@ public class UploadController {
 
             return Result.success(result);
         } catch (IOException e) {
+            e.printStackTrace();
             return Result.error(500, "文件上传失败: " + e.getMessage());
         }
     }

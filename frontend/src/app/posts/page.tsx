@@ -119,7 +119,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
               ? 'font-["Space_Grotesk"] text-gray-600'
               : 'text-gray-500'
           }`}>
-            <time>{new Date(post.publishedAt).toLocaleDateString('zh-CN')}</time>
+            <time>{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('zh-CN') : new Date(post.createdAt).toLocaleDateString('zh-CN')}</time>
             {post.viewCount && (
               <span className="flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
