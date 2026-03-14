@@ -91,23 +91,23 @@ jobs:
           # Copy public folder to standalone
           cp -r public .next/standalone/
 
-          # Package from standalone directory - files will be at root level after extraction
+          # Package from standalone directory using zip (better Windows compatibility)
           cd .next/standalone
           if [ "$UPLOAD_MODULES" = "yes" ]; then
             echo "Packaging with node_modules..."
-            tar -czf ~/frontend-deploy.tar.gz .next node_modules server.js package.json public
+            zip -r ~/frontend-deploy.zip .next node_modules server.js package.json public
           else
             echo "Packaging without node_modules (using cached)..."
-            tar -czf ~/frontend-deploy.tar.gz .next server.js package.json public
+            zip -r ~/frontend-deploy.zip .next server.js package.json public
           fi
 
           # Upload deployment package
           echo "Uploading deployment package..."
-          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=300 ~/frontend-deploy.tar.gz ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
+          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=300 ~/frontend-deploy.zip ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
           # Extract on server and save hash
           echo "Extracting files on server..."
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -NoProfile -Command \"Set-Location '$WIN_PATH'; Write-Host 'Current directory:'; Get-Location; Write-Host 'Files before extraction:'; Get-ChildItem | Select-Object Name, Length; Remove-Item -Recurse -Force .next,server.js,package.json,public -ErrorAction SilentlyContinue; Write-Host 'Extracting...'; tar -xzf frontend-deploy.tar.gz 2>&1; Write-Host 'Extraction result:'; Get-ChildItem | Select-Object Name; Remove-Item frontend-deploy.tar.gz -Force -ErrorAction SilentlyContinue; '$LOCAL_HASH' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -NoProfile -Command \"Set-Location '$WIN_PATH'; Write-Host 'Current directory:'; Get-Location; Write-Host 'Files before extraction:'; Get-ChildItem | Select-Object Name, Length; Remove-Item -Recurse -Force .next,server.js,package.json,public -ErrorAction SilentlyContinue; Write-Host 'Extracting...'; Expand-Archive -Path frontend-deploy.zip -DestinationPath . -Force; Write-Host 'Extraction result:'; Get-ChildItem | Select-Object Name; Remove-Item frontend-deploy.zip -Force -ErrorAction SilentlyContinue; '$LOCAL_HASH' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
 
           echo "Frontend deployment complete!"
 
