@@ -7,6 +7,8 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
+      - 'deploy/scripts/start-service.ps1'
+      - 'deploy/scripts/stop-service.ps1'
   workflow_dispatch:
 
 jobs:
