@@ -132,44 +132,71 @@ function Start-Service {
 
     $errorLogFile = Join-Path $LOG_DIR "frontend-error.log"
 
-    # Use Start-BitsTransfer style background job for reliable process management
-    # Create a simple wrapper script to run node in background
+    # Create a wrapper script that keeps running and auto-restarts on failure
     $wrapperScript = @"
 @echo off
 cd /d "$SCRIPT_DIR"
+:restart
+echo [%date% %time%] Starting frontend service... >> "$LOG_FILE"
 node server.js >> "$LOG_FILE" 2>> "$errorLogFile"
+if %errorlevel% neq 0 (
+    echo [%date% %time%] Frontend crashed with exit code %errorlevel%, restarting in 5 seconds... >> "$errorLogFile"
+    timeout /t 5 /nobreak > nul
+    goto restart
+)
 "@
     $wrapperPath = Join-Path $SCRIPT_DIR "run-frontend.bat"
     $wrapperScript | Out-File -FilePath $wrapperPath -Encoding ASCII -Force
 
-    # Start the batch file in background
+    # Start the batch file in background using start command to detach from current session
     $processArgs = @{
         FilePath = "cmd.exe"
-        ArgumentList = "/c", $wrapperPath
-        WindowStyle = "Hidden"
+        ArgumentList = "/c", "start", """FrontendService""", "/min", $wrapperPath
         PassThru = $true
     }
 
     $process = Start-Process @processArgs
 
-    # Wait a moment to ensure process starts
-    Start-Sleep -Seconds 5
+    # Wait for the service to start
+    Write-Host "Waiting for frontend service to start..."
+    $maxWait = 30
+    $started = $false
 
-    # Find the actual node process (not cmd.exe)
-    $nodeProcess = Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object -First 1
-    if (-not $nodeProcess) {
-        Write-Host "Error: Frontend service failed to start"
+    for ($i = 1; $i -le $maxWait; $i++) {
+        Start-Sleep -Seconds 1
+
+        # Check if port 3000 is listening
+        $portCheck = netstat -ano | Select-String ":3000\s" | Select-Object -First 1
+        if ($portCheck) {
+            $started = $true
+            break
+        }
+
+        Write-Host "Waiting... ($i/$maxWait)"
+    }
+
+    if (-not $started) {
+        Write-Host "Error: Frontend service failed to start within $maxWait seconds"
         if (Test-Path $errorLogFile) {
             Write-Host "Error log content:"
             Get-Content $errorLogFile -Tail 20
         }
+        if (Test-Path $LOG_FILE) {
+            Write-Host "Service log content:"
+            Get-Content $LOG_FILE -Tail 20
+        }
         exit 1
     }
 
-    # Save the node process PID
-    $nodeProcess.Id | Out-File -FilePath $PID_FILE -Force
+    # Find the node process for PID file
+    $nodeProcess = Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($nodeProcess) {
+        $nodeProcess.Id | Out-File -FilePath $PID_FILE -Force
+        Write-Host "Frontend service started (PID: $($nodeProcess.Id))"
+    } else {
+        Write-Host "Frontend service started (port 3000 is listening)"
+    }
 
-    Write-Host "Frontend service started (PID: $($nodeProcess.Id))"
     Write-Host "Log file: $LOG_FILE"
 }
 

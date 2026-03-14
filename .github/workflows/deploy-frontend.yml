@@ -7,6 +7,7 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-frontend.yml'
+      - 'deploy/scripts/start-frontend.ps1'
   workflow_dispatch:
 
 jobs:
