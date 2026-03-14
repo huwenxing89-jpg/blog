@@ -54,7 +54,7 @@ jobs:
           sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }\""
 
           # Check if node_modules cache exists
-          CACHE_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -File '${DEPLOY_PATH}\\check-cache.ps1' -Path '${DEPLOY_PATH}'")
+          CACHE_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '${DEPLOY_PATH}/check-cache.ps1' -Path '${DEPLOY_PATH}'\"")
 
           # Calculate local package-lock.json hash
           LOCAL_HASH=$(md5sum frontend/package-lock.json | cut -d' ' -f1)
