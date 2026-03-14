@@ -95,6 +95,14 @@ jobs:
 
           # Package from standalone directory using zip (better Windows compatibility)
           cd .next/standalone
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Checking server.js:"
+          ls -la server.js 2>/dev/null || echo "server.js NOT found!"
+          echo "Checking .next folder:"
+          ls -la .next 2>/dev/null || echo ".next folder NOT found!"
+
           if [ "$UPLOAD_MODULES" = "yes" ]; then
             echo "Packaging with node_modules..."
             zip -r ~/frontend-deploy.zip .next node_modules server.js package.json public
@@ -103,13 +111,17 @@ jobs:
             zip -r ~/frontend-deploy.zip .next server.js package.json public
           fi
 
+          # Verify zip contents
+          echo "Verifying zip contents..."
+          unzip -l ~/frontend-deploy.zip | head -30
+
           # Upload deployment package
           echo "Uploading deployment package..."
           sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=300 ~/frontend-deploy.zip ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
           # Extract on server and save hash
           echo "Extracting files on server..."
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -NoProfile -Command \"Set-Location '$WIN_PATH'; Write-Host 'Current directory:'; Get-Location; Write-Host 'Files before extraction:'; Get-ChildItem | Select-Object Name, Length; Remove-Item -Recurse -Force .next,server.js,package.json,public,frontend-deploy.tar.gz -ErrorAction SilentlyContinue; Write-Host 'Extracting zip...'; if (Test-Path 'frontend-deploy.zip') { Expand-Archive -Path frontend-deploy.zip -DestinationPath . -Force; Write-Host 'Extraction result:'; Get-ChildItem | Select-Object Name; Write-Host 'Checking server.js:'; if (Test-Path 'server.js') { Write-Host 'server.js found!' } else { Write-Host 'ERROR: server.js NOT found!' }; Remove-Item frontend-deploy.zip -Force -ErrorAction SilentlyContinue } else { Write-Host 'ERROR: frontend-deploy.zip not found!' }; '$LOCAL_HASH' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -NoProfile -Command \"Set-Location '$WIN_PATH'; Write-Host 'Current directory:'; Get-Location; Write-Host 'Files before extraction:'; Get-ChildItem | Select-Object Name, Length; Remove-Item -Recurse -Force .next,server.js,package.json,public,frontend-deploy.tar.gz -ErrorAction SilentlyContinue; Write-Host 'Extracting zip...'; if (Test-Path 'frontend-deploy.zip') { Write-Host 'Zip file size:'; (Get-Item 'frontend-deploy.zip').Length; Write-Host 'Zip contents:'; Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::OpenRead('frontend-deploy.zip').Entries | Select-Object -First 20 FullName; Expand-Archive -Path frontend-deploy.zip -DestinationPath . -Force; Write-Host 'Extraction result:'; Get-ChildItem | Select-Object Name; Write-Host 'Checking server.js:'; if (Test-Path 'server.js') { Write-Host 'server.js found!' } else { Write-Host 'ERROR: server.js NOT found!' }; Write-Host 'Contents of .next folder if exists:'; if (Test-Path '.next') { Get-ChildItem .next | Select-Object Name }; Remove-Item frontend-deploy.zip -Force -ErrorAction SilentlyContinue } else { Write-Host 'ERROR: frontend-deploy.zip not found!' }; '$LOCAL_HASH' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
 
           echo "Frontend deployment complete!"
 
