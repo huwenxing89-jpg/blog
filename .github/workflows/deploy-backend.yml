@@ -1,14 +1,6 @@
 name: Deploy Backend to Windows Server
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'backend/**'
-      - '.github/workflows/deploy-backend.yml'
-      - 'deploy/scripts/start-service.ps1'
-      - 'deploy/scripts/stop-service.ps1'
   workflow_dispatch:
 
 jobs:
