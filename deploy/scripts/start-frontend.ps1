@@ -127,32 +127,42 @@ function Start-Service {
     $env:PORT = "3000"
     $env:NODE_ENV = "production"
 
-    # Start new service
+    # Start new service using cmd.exe to ensure it stays running
     Write-Host "Starting frontend service..."
 
     $errorLogFile = Join-Path $LOG_DIR "frontend-error.log"
-    $process = Start-Process -FilePath "node" -ArgumentList "server.js" -WindowStyle Hidden -PassThru -WorkingDirectory $SCRIPT_DIR -RedirectStandardOutput $LOG_FILE -RedirectStandardError $errorLogFile
 
-    # Wait a moment to ensure process starts
-    Start-Sleep -Seconds 3
+    # Use cmd /c start to launch the process in a way that survives SSH session end
+    $startCmd = "cmd /c start /b node server.js > `"$LOG_FILE`" 2> `"$errorLogFile`""
 
-    # Check if process is still running
-    $runningProcess = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-    if (-not $runningProcess) {
-        Write-Host "Error: Frontend service failed to start"
-        # Show error log if exists
-        if (Test-Path $errorLogFile) {
-            Write-Host "Error log content:"
-            Get-Content $errorLogFile -Tail 20
+    # Change to script directory and start
+    Push-Location $SCRIPT_DIR
+    try {
+        Invoke-Expression $startCmd
+        Start-Sleep -Seconds 3
+
+        # Find the node process
+        $nodeProcess = Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object {
+            $_.StartTime -gt (Get-Date).AddSeconds(-10)
+        } | Select-Object -First 1
+
+        if (-not $nodeProcess) {
+            Write-Host "Error: Frontend service failed to start"
+            if (Test-Path $errorLogFile) {
+                Write-Host "Error log content:"
+                Get-Content $errorLogFile -Tail 20
+            }
+            exit 1
         }
-        exit 1
+
+        # Save PID
+        $nodeProcess.Id | Out-File -FilePath $PID_FILE -Force
+
+        Write-Host "Frontend service started (PID: $($nodeProcess.Id))"
+        Write-Host "Log file: $LOG_FILE"
+    } finally {
+        Pop-Location
     }
-
-    # Save PID
-    $process.Id | Out-File -FilePath $PID_FILE -Force
-
-    Write-Host "Frontend service started (PID: $($process.Id))"
-    Write-Host "Log file: $LOG_FILE"
 }
 
 # Main logic

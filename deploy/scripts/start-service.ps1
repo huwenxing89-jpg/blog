@@ -50,30 +50,36 @@ Write-Host "Starting backend service..."
 Write-Host "JAR file: $JAR_FILE"
 Write-Host "Log file: $LOG_FILE"
 
-$arguments = @(
-    "-jar"
-    $JAR_FILE
-    "--spring.profiles.active=prod"
-    "--server.port=8088"
-)
+$arguments = "-jar `"$JAR_FILE`" --spring.profiles.active=prod --server.port=8088"
 
-# Start process with new window to keep it running
-$process = Start-Process -FilePath "java" -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput $LOG_FILE -RedirectStandardError $ERROR_LOG
+# Use cmd /c start to launch the process in a way that survives SSH session end
+$startCmd = "cmd /c start /b java $arguments > `"$LOG_FILE`" 2> `"$ERROR_LOG`""
 
-# Wait a moment to ensure process starts
-Start-Sleep -Seconds 2
+# Change to script directory and start
+Push-Location $SCRIPT_DIR
+try {
+    Invoke-Expression $startCmd
+    Start-Sleep -Seconds 5
 
-# Check if process is still running
-$runningProcess = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-if (-not $runningProcess) {
-    Write-Host "Error: Backend service failed to start, check logs"
-    Get-Content $ERROR_LOG -Tail 50
-    exit 1
+    # Find the java process
+    $javaProcess = Get-Process -Name "java" -ErrorAction SilentlyContinue | Where-Object {
+        $_.StartTime -gt (Get-Date).AddSeconds(-15)
+    } | Select-Object -First 1
+
+    if (-not $javaProcess) {
+        Write-Host "Error: Backend service failed to start, check logs"
+        if (Test-Path $ERROR_LOG) {
+            Get-Content $ERROR_LOG -Tail 50
+        }
+        exit 1
+    }
+
+    # Save PID
+    $javaProcess.Id | Out-File -FilePath $PID_FILE -Force
+
+    Write-Host "Backend service started (PID: $($javaProcess.Id))"
+    Write-Host "Log file: $LOG_FILE"
+    Write-Host "Error log: $ERROR_LOG"
+} finally {
+    Pop-Location
 }
-
-# Save PID
-$process.Id | Out-File -FilePath $PID_FILE -Force
-
-Write-Host "Backend service started (PID: $($process.Id))"
-Write-Host "Log file: $LOG_FILE"
-Write-Host "Error log: $ERROR_LOG"
