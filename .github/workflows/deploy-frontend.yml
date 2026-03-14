@@ -60,6 +60,8 @@ jobs:
 
           # Get server hash if exists
           SERVER_HASH=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\.moduleshash' -ErrorAction SilentlyContinue\"" || echo "")
+          # Trim whitespace (including Windows carriage return)
+          SERVER_HASH=$(echo "$SERVER_HASH" | tr -d '[:space:]')
           echo "Server cached hash: $SERVER_HASH"
 
           # Check if node_modules exists on server
