@@ -63,16 +63,20 @@ jobs:
           echo "Server cached hash: $SERVER_HASH"
 
           # Check if node_modules exists on server
-          NODE_MODULES_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '$WIN_PATH\\node_modules') { 'yes' } else { 'no' }\"" 2>/dev/null || echo "no")
-          echo "node_modules exists on server: $NODE_MODULES_EXISTS"
+          echo "Checking if node_modules exists on server..."
+          NODE_MODULES_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '$WIN_PATH\\node_modules') { Write-Output 'EXISTS' } else { Write-Output 'NOT_EXISTS' }\"" 2>/dev/null || echo "NOT_EXISTS")
+          echo "node_modules check result: $NODE_MODULES_CHECK"
 
           # Decide whether to upload node_modules
           UPLOAD_MODULES="no"
-          if [ "$NODE_MODULES_EXISTS" != "yes" ] || [ "$SERVER_HASH" != "$LOCAL_HASH" ]; then
+          if [ "$NODE_MODULES_CHECK" != "EXISTS" ]; then
             UPLOAD_MODULES="yes"
-            echo "Dependencies changed or cache missing, will upload node_modules"
+            echo "node_modules not found on server, will upload"
+          elif [ "$SERVER_HASH" != "$LOCAL_HASH" ]; then
+            UPLOAD_MODULES="yes"
+            echo "Dependencies changed (hash mismatch), will upload node_modules"
           else
-            echo "Using cached node_modules"
+            echo "Using cached node_modules (hash match and exists)"
           fi
 
           # Create deployment package
