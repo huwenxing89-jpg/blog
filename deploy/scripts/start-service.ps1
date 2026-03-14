@@ -50,10 +50,10 @@ Write-Host "Starting backend service..."
 Write-Host "JAR file: $JAR_FILE"
 Write-Host "Log file: $LOG_FILE"
 
-# Use Start-Process with -WorkingDirectory to ensure proper path resolution
+# Use Start-Process with absolute path to JAR file
 $processArgs = @{
     FilePath = "java"
-    ArgumentList = "-jar", "app.jar", "--spring.profiles.active=prod", "--server.port=8088"
+    ArgumentList = "-jar", $JAR_FILE, "--spring.profiles.active=prod", "--server.port=8088"
     WorkingDirectory = $SCRIPT_DIR
     WindowStyle = "Hidden"
     RedirectStandardOutput = $LOG_FILE
