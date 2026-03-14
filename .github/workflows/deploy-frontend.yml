@@ -47,30 +47,27 @@ jobs:
           echo "Deploying frontend to $DEPLOY_SERVER..."
           echo "Target path: $DEPLOY_PATH"
 
-          # Upload helper scripts first
-          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/check-cache.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
+          # 将路径转换为 Windows 格式（正斜杠转反斜杠）
+          WIN_PATH=$(echo "$DEPLOY_PATH" | sed 's/\//\\/g')
+          echo "Windows 路径: $WIN_PATH"
 
           # Ensure target directory exists
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }\""
-
-          # Check if node_modules cache exists
-          CACHE_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '${DEPLOY_PATH}/check-cache.ps1' -Path '${DEPLOY_PATH}'\"")
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '$WIN_PATH')) { New-Item -ItemType Directory -Path '$WIN_PATH' -Force }; if (-not (Test-Path '$WIN_PATH\\logs')) { New-Item -ItemType Directory -Path '$WIN_PATH\\logs' -Force }\""
 
           # Calculate local package-lock.json hash
           LOCAL_HASH=$(md5sum frontend/package-lock.json | cut -d' ' -f1)
           echo "Local package-lock.json hash: $LOCAL_HASH"
 
           # Get server hash if exists
-          if [ "$CACHE_EXISTS" = "yes" ]; then
-            SERVER_HASH=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '${DEPLOY_PATH}\\.moduleshash' -ErrorAction SilentlyContinue\"")
-            echo "Server cached hash: $SERVER_HASH"
-          else
-            SERVER_HASH=""
-          fi
+          SERVER_HASH=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\.moduleshash' -ErrorAction SilentlyContinue\"" || echo "")
+          echo "Server cached hash: $SERVER_HASH"
+
+          # Check if node_modules exists on server
+          NODE_MODULES_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Test-Path '$WIN_PATH\\node_modules'\"" || echo "False")
 
           # Decide whether to upload node_modules
           UPLOAD_MODULES="no"
-          if [ "$CACHE_EXISTS" != "yes" ] || [ "$SERVER_HASH" != "$LOCAL_HASH" ]; then
+          if [ "$NODE_MODULES_EXISTS" != "True" ] || [ "$SERVER_HASH" != "$LOCAL_HASH" ]; then
             UPLOAD_MODULES="yes"
             echo "Dependencies changed or cache missing, will upload node_modules"
           else
@@ -103,7 +100,7 @@ jobs:
 
           # Extract on server and save hash
           echo "Extracting files on server..."
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"cd '${DEPLOY_PATH}'; Remove-Item -Recurse -Force .next,server.js,package.json,public -ErrorAction SilentlyContinue; tar -xzf frontend-deploy.tar.gz; Remove-Item frontend-deploy.tar.gz -Force; '${LOCAL_HASH}' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"cd '$WIN_PATH'; Remove-Item -Recurse -Force .next,server.js,package.json,public -ErrorAction SilentlyContinue; tar -xzf frontend-deploy.tar.gz; Remove-Item frontend-deploy.tar.gz -Force; '$LOCAL_HASH' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
 
           echo "Frontend deployment complete!"
 
@@ -117,11 +114,14 @@ jobs:
           # Upload start script
           sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/start-frontend.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
+          # 将路径转换为 Windows 格式
+          WIN_PATH=$(echo "$DEPLOY_PATH" | sed 's/\//\\/g')
+
           # Stop existing service
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '${DEPLOY_PATH}\\start-frontend.ps1' -Action Stop\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '$WIN_PATH\\start-frontend.ps1' -Action Stop\""
 
           # Start new service
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '${DEPLOY_PATH}\\start-frontend.ps1' -Action Start\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '$WIN_PATH\\start-frontend.ps1' -Action Start\""
 
           echo "Frontend service restarted"
 
@@ -130,22 +130,37 @@ jobs:
           DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
         run: |
           echo "Checking frontend service status..."
+
+          # 将路径转换为 Windows 格式
+          WIN_PATH=$(echo "$DEPLOY_PATH" | sed 's/\//\\/g')
+
           MAX_RETRIES=30
           RETRY_INTERVAL=5
 
           for i in $(seq 1 $MAX_RETRIES); do
-            HTTP_CODE=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000 2>/dev/null || echo 000")
+            # 检查端口是否在监听
+            PORT_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "netstat -ano | findstr ':3000.*LISTENING'" || echo "")
 
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "Frontend service started successfully!"
+            if [ -n "$PORT_CHECK" ]; then
+              echo "✅ Frontend service started successfully! Port 3000 is listening"
+              # 显示日志最后几行
+              sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\logs\\frontend.log' -Tail 10 -ErrorAction SilentlyContinue\""
               exit 0
             fi
 
             echo "Waiting for frontend service... ($i/$MAX_RETRIES)"
+
+            # 如果是最后一次重试，显示错误日志
+            if [ $i -eq $MAX_RETRIES ]; then
+              echo "显示错误日志:"
+              sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\logs\\frontend-error.log' -Tail 30 -ErrorAction SilentlyContinue\""
+            fi
+
             sleep $RETRY_INTERVAL
           done
 
           echo "Frontend service startup timeout, please check logs"
-          exit 0
+          exit 1

@@ -42,14 +42,18 @@ jobs:
           echo "开始部署后端到 $DEPLOY_SERVER..."
           echo "目标路径: $DEPLOY_PATH"
 
+          # 将路径转换为 Windows 格式（正斜杠转反斜杠）
+          WIN_PATH=$(echo "$DEPLOY_PATH" | sed 's/\//\\/g')
+          echo "Windows 路径: $WIN_PATH"
+
           # 确保目标目录存在
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '${DEPLOY_PATH}')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}' -Force }; if (-not (Test-Path '${DEPLOY_PATH}\\logs')) { New-Item -ItemType Directory -Path '${DEPLOY_PATH}\\logs' -Force }\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (-not (Test-Path '$WIN_PATH')) { New-Item -ItemType Directory -Path '$WIN_PATH' -Force }; if (-not (Test-Path '$WIN_PATH\\logs')) { New-Item -ItemType Directory -Path '$WIN_PATH\\logs' -Force }\""
 
           # 先上传停止脚本
           sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/stop-service.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
-          # 停止现有的后端服务（调用脚本）
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -File '${DEPLOY_PATH}\\stop-service.ps1'"
+          # 停止现有的后端服务（直接执行脚本内容，避免路径问题）
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '$WIN_PATH\\stop-service.ps1'\""
 
           # 复制 JAR 文件到服务器
           for i in 1 2 3; do
@@ -65,8 +69,8 @@ jobs:
           # 复制启动脚本到服务器
           sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/start-service.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
 
-          # 启动后端服务
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '${DEPLOY_PATH}\\start-service.ps1'\""
+          # 启动后端服务（直接执行脚本内容）
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '$WIN_PATH\\start-service.ps1'\""
 
           echo "后端服务部署完成！"
 
@@ -75,22 +79,37 @@ jobs:
           DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_BACKEND }}
         run: |
           echo "检查后端服务状态..."
+
+          # 将路径转换为 Windows 格式
+          WIN_PATH=$(echo "$DEPLOY_PATH" | sed 's/\//\\/g')
+
           MAX_RETRIES=30
           RETRY_INTERVAL=10
 
           for i in $(seq 1 $MAX_RETRIES); do
-            HTTP_CODE=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8088/api/posts 2>/dev/null || echo 000")
+            # 检查端口是否在监听
+            PORT_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "netstat -ano | findstr ':8088.*LISTENING'" || echo "")
 
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ 后端服务启动成功！"
+            if [ -n "$PORT_CHECK" ]; then
+              echo "✅ 后端服务启动成功！端口 8088 正在监听"
+              # 显示日志最后几行
+              sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\logs\\backend.log' -Tail 10 -ErrorAction SilentlyContinue\""
               exit 0
             fi
 
             echo "等待后端服务启动... ($i/$MAX_RETRIES)"
+
+            # 如果是最后一次重试，显示错误日志
+            if [ $i -eq $MAX_RETRIES ]; then
+              echo "显示错误日志:"
+              sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\logs\\error.log' -Tail 30 -ErrorAction SilentlyContinue\""
+            fi
+
             sleep $RETRY_INTERVAL
           done
 
           echo "⚠️ 后端服务启动超时，请检查日志"
-          exit 0
+          exit 1
