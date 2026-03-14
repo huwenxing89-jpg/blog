@@ -6,52 +6,29 @@ $ErrorActionPreference = "Stop"
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PID_FILE = Join-Path $SCRIPT_DIR "app.pid"
 $LOG_DIR = Join-Path $SCRIPT_DIR "logs"
+$PORT = 8088
 
-# Check if PID file exists
-if (-not (Test-Path $PID_FILE)) {
-    Write-Host "No running backend service (PID file not found)"
-    exit 0
-}
+# First, kill any process using port 8088
+Write-Host "Checking for processes using port $PORT..."
+$portProcesses = netstat -ano | Select-String ":$PORT\s" | ForEach-Object {
+    ($_ -split '\s+')[-1]
+} | Where-Object { $_ -match '^\d+$' } | Select-Object -Unique
 
-# Read PID
-$pid = Get-Content $PID_FILE -ErrorAction SilentlyContinue
-if (-not $pid) {
-    Write-Host "PID file is empty"
-    Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
-    exit 0
-}
-
-# Check if process exists
-$process = Get-Process -Id $pid -ErrorAction SilentlyContinue
-if (-not $process) {
-    Write-Host "Process not found (PID: $pid)"
-    Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
-    exit 0
-}
-
-# Stop process
-Write-Host "Stopping backend service (PID: $pid)..."
-Stop-Process -Id $pid -Force
-
-# Wait for process to end
-$maxWait = 10
-for ($i = 1; $i -le $maxWait; $i++) {
-    $stillRunning = Get-Process -Id $pid -ErrorAction SilentlyContinue
-    if (-not $stillRunning) {
-        break
+if ($portProcesses) {
+    foreach ($procId in $portProcesses) {
+        if ($procId -and $procId -ne "0") {
+            Write-Host "Killing process $procId using port $PORT..."
+            Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+        }
     }
-    Start-Sleep -Seconds 1
-    Write-Host "Waiting... ($i/$maxWait)"
+    Start-Sleep -Seconds 2
+    Write-Host "Backend service stopped"
+} else {
+    Write-Host "No process found using port $PORT"
 }
 
-# Force kill if still running
-$stillRunning = Get-Process -Id $pid -ErrorAction SilentlyContinue
-if ($stillRunning) {
-    Write-Host "Force killing process..."
-    Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+# Check if PID file exists and clean up
+if (Test-Path $PID_FILE) {
+    Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
+    Write-Host "PID file cleaned up"
 }
-
-# Clean up PID file
-Remove-Item $PID_FILE -Force -ErrorAction SilentlyContinue
-
-Write-Host "Backend service stopped"
