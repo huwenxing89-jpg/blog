@@ -132,11 +132,20 @@ function Start-Service {
 
     $errorLogFile = Join-Path $LOG_DIR "frontend-error.log"
 
-    # Use cmd.exe to redirect output to files (more reliable than Start-Process redirect)
+    # Use Start-BitsTransfer style background job for reliable process management
+    # Create a simple wrapper script to run node in background
+    $wrapperScript = @"
+@echo off
+cd /d "$SCRIPT_DIR"
+node server.js >> "$LOG_FILE" 2>> "$errorLogFile"
+"@
+    $wrapperPath = Join-Path $SCRIPT_DIR "run-frontend.bat"
+    $wrapperScript | Out-File -FilePath $wrapperPath -Encoding ASCII -Force
+
+    # Start the batch file in background
     $processArgs = @{
         FilePath = "cmd.exe"
-        ArgumentList = "/c", "node server.js >> `"$LOG_FILE`" 2>> `"$errorLogFile`""
-        WorkingDirectory = $SCRIPT_DIR
+        ArgumentList = "/c", $wrapperPath
         WindowStyle = "Hidden"
         PassThru = $true
     }
@@ -144,11 +153,11 @@ function Start-Service {
     $process = Start-Process @processArgs
 
     # Wait a moment to ensure process starts
-    Start-Sleep -Seconds 3
+    Start-Sleep -Seconds 5
 
-    # Check if process is still running
-    $runningProcess = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-    if (-not $runningProcess) {
+    # Find the actual node process (not cmd.exe)
+    $nodeProcess = Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $nodeProcess) {
         Write-Host "Error: Frontend service failed to start"
         if (Test-Path $errorLogFile) {
             Write-Host "Error log content:"
@@ -157,10 +166,10 @@ function Start-Service {
         exit 1
     }
 
-    # Save PID
-    $process.Id | Out-File -FilePath $PID_FILE -Force
+    # Save the node process PID
+    $nodeProcess.Id | Out-File -FilePath $PID_FILE -Force
 
-    Write-Host "Frontend service started (PID: $($process.Id))"
+    Write-Host "Frontend service started (PID: $($nodeProcess.Id))"
     Write-Host "Log file: $LOG_FILE"
 }
 
