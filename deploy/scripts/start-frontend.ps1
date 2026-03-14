@@ -132,14 +132,12 @@ function Start-Service {
 
     $errorLogFile = Join-Path $LOG_DIR "frontend-error.log"
 
-    # Use Start-Process with -WorkingDirectory to ensure proper path resolution
+    # Use cmd.exe to redirect output to files (more reliable than Start-Process redirect)
     $processArgs = @{
-        FilePath = "node"
-        ArgumentList = "server.js"
+        FilePath = "cmd.exe"
+        ArgumentList = "/c", "node server.js >> `"$LOG_FILE`" 2>> `"$errorLogFile`""
         WorkingDirectory = $SCRIPT_DIR
         WindowStyle = "Hidden"
-        RedirectStandardOutput = $LOG_FILE
-        RedirectStandardError = $errorLogFile
         PassThru = $true
     }
 
