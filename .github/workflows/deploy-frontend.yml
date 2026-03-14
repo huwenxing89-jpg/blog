@@ -107,7 +107,7 @@ jobs:
 
           # Extract on server and save hash
           echo "Extracting files on server..."
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"cd '$WIN_PATH'; Remove-Item -Recurse -Force .next,server.js,package.json,public -ErrorAction SilentlyContinue; tar -xzf frontend-deploy.tar.gz; Remove-Item frontend-deploy.tar.gz -Force; '$LOCAL_HASH' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8\""
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -NoProfile -Command \"Push-Location '$WIN_PATH'; try { Remove-Item -Recurse -Force .next,server.js,package.json,public -ErrorAction SilentlyContinue; tar -xzf frontend-deploy.tar.gz; Write-Host 'tar extraction completed'; Remove-Item frontend-deploy.tar.gz -Force -ErrorAction SilentlyContinue; '$LOCAL_HASH' | Out-File -FilePath '.moduleshash' -Force -Encoding utf8; Write-Host 'Files after extraction:'; Get-ChildItem | Select-Object Name } finally { Pop-Location }\""
 
           echo "Frontend deployment complete!"
 
