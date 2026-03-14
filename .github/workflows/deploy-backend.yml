@@ -55,9 +55,9 @@ jobs:
           # 停止现有的后端服务（直接执行脚本内容，避免路径问题）
           sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '$WIN_PATH\\stop-service.ps1'\""
 
-          # 复制 JAR 文件到服务器
+          # 复制 JAR 文件到服务器（使用压缩加速传输）
           for i in 1 2 3; do
-            if sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no -o ConnectTimeout=300 backend/target/blog-backend-1.0.0.jar ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/app.jar; then
+            if sshpass -p "$DEPLOY_PASSWORD" scp -C -o StrictHostKeyChecking=no -o ConnectTimeout=300 backend/target/blog-backend-1.0.0.jar ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/app.jar; then
               echo "JAR 文件上传成功"
               break
             else
