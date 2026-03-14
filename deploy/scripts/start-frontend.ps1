@@ -100,11 +100,37 @@ function Start-Service {
         New-Item -ItemType Directory -Path $LOG_DIR -Force | Out-Null
     }
 
-    # Stop existing service first
-    if (Test-Path $PID_FILE) {
-        Stop-Service
-        Start-Sleep -Seconds 2
+    # ALWAYS stop any existing processes on port 3000 first
+    Write-Host "Ensuring port 3000 is free..."
+
+    # Kill any process using port 3000
+    $port3000Processes = netstat -ano | findstr ":3000" | ForEach-Object {
+        ($_ -split '\s+')[-1]
+    } | Where-Object { $_ -match '^\d+$' } | Select-Object -Unique
+
+    if ($port3000Processes) {
+        foreach ($procId in $port3000Processes) {
+            if ($procId -and $procId -ne "0") {
+                Write-Host "Killing process $procId using port 3000..."
+                Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+            }
+        }
+        Start-Sleep -Seconds 3
     }
+
+    # Also kill all node processes to be safe
+    Stop-Process -Name node -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+
+    # Verify port is free
+    $portCheck = netstat -ano | findstr ":3000"
+    if ($portCheck) {
+        Write-Host "Warning: Port 3000 still in use, forcing cleanup..."
+        Stop-Process -Name node -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 3
+    }
+
+    Write-Host "Port 3000 is now free"
 
     # Diagnostic info
     Write-Host "Working directory: $SCRIPT_DIR"
@@ -170,8 +196,8 @@ if %errorlevel% neq 0 (
     for ($i = 1; $i -le $maxWait; $i++) {
         Start-Sleep -Seconds 1
 
-        # Check if port 3000 is listening
-        $portCheck = netstat -ano | Select-String ":3000\s" | Select-Object -First 1
+        # Check if port 3000 is listening (using findstr for reliability)
+        $portCheck = netstat -ano | findstr ":3000.*LISTENING"
         if ($portCheck) {
             $started = $true
             break
