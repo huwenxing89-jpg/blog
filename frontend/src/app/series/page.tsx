@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import request from '@/lib/request';
 import { useSettings } from '@/components/providers/settings-provider';
+import { getImageUrl } from '@/lib/utils';
 
 interface Series {
   id: number;
@@ -148,7 +149,7 @@ function SeriesCard({ series, index }: { series: Series; index: number }) {
         {series.coverImage && (
           <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
             <img
-              src={series.coverImage}
+              src={getImageUrl(series.coverImage)}
               alt={series.name}
               className="w-full h-full object-cover"
             />

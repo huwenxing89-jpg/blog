@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import request from '@/lib/request';
+import { getImageUrl } from '@/lib/utils';
 
 interface Category {
   id: number;
@@ -168,7 +169,7 @@ export default function NewPostPage() {
                 {formData.coverImage && (
                   <div className="relative w-full h-40 rounded-lg overflow-hidden border">
                     <img
-                      src={formData.coverImage}
+                      src={getImageUrl(formData.coverImage)}
                       alt="封面预览"
                       className="w-full h-full object-cover"
                     />

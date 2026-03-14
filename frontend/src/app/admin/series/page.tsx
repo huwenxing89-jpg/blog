@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import request from '@/lib/request';
+import { getImageUrl } from '@/lib/utils';
 
 interface Series {
   id: number;
@@ -169,7 +170,7 @@ export default function SeriesPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{s.description}</p>
             {s.coverImage && (
               <img
-                src={s.coverImage}
+                src={getImageUrl(s.coverImage)}
                 alt={s.name}
                 className="w-full h-32 object-cover rounded"
               />

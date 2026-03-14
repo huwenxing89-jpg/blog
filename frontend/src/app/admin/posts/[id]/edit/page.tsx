@@ -4,6 +4,7 @@ import { useEffect, useState, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import request from '@/lib/request';
+import { getImageUrl } from '@/lib/utils';
 
 interface Category {
   id: number;
@@ -232,7 +233,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
                 {formData.coverImage && (
                   <div className="relative w-full h-40 rounded-lg overflow-hidden border">
                     <img
-                      src={formData.coverImage}
+                      src={getImageUrl(formData.coverImage)}
                       alt="封面预览"
                       className="w-full h-full object-cover"
                     />

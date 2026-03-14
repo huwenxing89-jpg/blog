@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import request from '@/lib/request';
 import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer';
 import { useSettings } from '@/components/providers/settings-provider';
+import { getImageUrl } from '@/lib/utils';
 
 interface Post {
   id: number;
@@ -515,7 +516,7 @@ function PostDetailContent({ slug }: { slug: string }) {
                           {p.coverImage && (
                             <div className="hidden sm:block w-32 h-24 flex-shrink-0 rounded-lg overflow-hidden">
                               <img
-                                src={p.coverImage}
+                                src={getImageUrl(p.coverImage)}
                                 alt={p.title}
                                 className="w-full h-full object-cover"
                               />

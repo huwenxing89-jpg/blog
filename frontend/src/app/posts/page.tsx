@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import request from '@/lib/request';
 import { useSettings } from '@/components/providers/settings-provider';
+import { getImageUrl } from '@/lib/utils';
 
 interface Post {
   id: number;
@@ -55,7 +56,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
         <div className="relative aspect-[16/10] overflow-hidden">
           {post.coverImage ? (
             <img
-              src={post.coverImage}
+              src={getImageUrl(post.coverImage)}
               alt={post.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
