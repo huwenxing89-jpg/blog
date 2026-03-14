@@ -28,7 +28,7 @@ $LOG_DIR = Join-Path $SCRIPT_DIR "logs"
 function Stop-Service {
     # First, kill any process using port 3000
     Write-Host "Checking for processes using port 3000..."
-    $port3000Processes = netstat -ano | Select-String ":3000\s" | ForEach-Object {
+    $port3000Processes = netstat -ano | findstr ":3000" | ForEach-Object {
         ($_ -split '\s+')[-1]
     } | Where-Object { $_ -match '^\d+$' } | Select-Object -Unique
 
@@ -39,8 +39,13 @@ function Stop-Service {
                 Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
             }
         }
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 3
     }
+
+    # Also kill all node processes to be safe
+    Write-Host "Stopping all node processes..."
+    Stop-Process -Name node -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
 
     # Check if PID file exists
     if (-not (Test-Path $PID_FILE)) {
