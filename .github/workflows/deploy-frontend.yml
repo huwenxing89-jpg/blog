@@ -63,11 +63,12 @@ jobs:
           echo "Server cached hash: $SERVER_HASH"
 
           # Check if node_modules exists on server
-          NODE_MODULES_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Test-Path '$WIN_PATH\\node_modules'\"" || echo "False")
+          NODE_MODULES_EXISTS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '$WIN_PATH\\node_modules') { 'yes' } else { 'no' }\"" 2>/dev/null || echo "no")
+          echo "node_modules exists on server: $NODE_MODULES_EXISTS"
 
           # Decide whether to upload node_modules
           UPLOAD_MODULES="no"
-          if [ "$NODE_MODULES_EXISTS" != "True" ] || [ "$SERVER_HASH" != "$LOCAL_HASH" ]; then
+          if [ "$NODE_MODULES_EXISTS" != "yes" ] || [ "$SERVER_HASH" != "$LOCAL_HASH" ]; then
             UPLOAD_MODULES="yes"
             echo "Dependencies changed or cache missing, will upload node_modules"
           else
@@ -141,10 +142,10 @@ jobs:
           RETRY_INTERVAL=5
 
           for i in $(seq 1 $MAX_RETRIES); do
-            # 检查端口是否在监听
-            PORT_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "netstat -ano | findstr ':3000.*LISTENING'" || echo "")
+            # 检查端口是否在监听（使用 PowerShell 更可靠）
+            PORT_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"(netstat -ano | Select-String ':3000.*LISTENING').Count\"" 2>/dev/null || echo "0")
 
-            if [ -n "$PORT_CHECK" ]; then
+            if [ "$PORT_CHECK" -gt 0 ] 2>/dev/null; then
               echo "✅ Frontend service started successfully! Port 3000 is listening"
               # 显示日志最后几行
               sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\logs\\frontend.log' -Tail 10 -ErrorAction SilentlyContinue\""
