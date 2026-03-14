@@ -9,8 +9,18 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Get script directory
-$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+# Get script directory - handle both direct execution and SSH invocation
+if ($MyInvocation.MyCommand.Path) {
+    $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+} elseif ($PSScriptRoot) {
+    $SCRIPT_DIR = $PSScriptRoot
+} else {
+    # Fallback to current directory
+    $SCRIPT_DIR = Get-Location
+}
+
+Write-Host "Script directory: $SCRIPT_DIR"
+
 $PID_FILE = Join-Path $SCRIPT_DIR "frontend.pid"
 $LOG_FILE = Join-Path $SCRIPT_DIR "logs\frontend.log"
 $LOG_DIR = Join-Path $SCRIPT_DIR "logs"
