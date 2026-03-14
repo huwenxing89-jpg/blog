@@ -65,11 +65,13 @@ jobs:
           # Check if node_modules exists on server
           echo "Checking if node_modules exists on server..."
           NODE_MODULES_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"if (Test-Path '$WIN_PATH\\node_modules') { Write-Output 'EXISTS' } else { Write-Output 'NOT_EXISTS' }\"" 2>/dev/null || echo "NOT_EXISTS")
-          echo "node_modules check result: $NODE_MODULES_CHECK"
+          # Trim whitespace
+          NODE_MODULES_CHECK=$(echo "$NODE_MODULES_CHECK" | tr -d '[:space:]')
+          echo "node_modules check result: '$NODE_MODULES_CHECK'"
 
           # Decide whether to upload node_modules
           UPLOAD_MODULES="no"
-          if [ "$NODE_MODULES_CHECK" != "EXISTS" ]; then
+          if [ "$NODE_MODULES_CHECK" = "NOT_EXISTS" ]; then
             UPLOAD_MODULES="yes"
             echo "node_modules not found on server, will upload"
           elif [ "$SERVER_HASH" != "$LOCAL_HASH" ]; then
