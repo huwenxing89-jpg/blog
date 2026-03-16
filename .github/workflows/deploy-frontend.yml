@@ -157,9 +157,9 @@ jobs:
           MAX_RETRIES=30
           RETRY_INTERVAL=5
 
-          for i in $(seq 1 $MAX_RETRIES); do
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
             # 检查端口是否在监听
-            PORT_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "netstat -ano | findstr ':3000'" 2>/dev/null)
+            PORT_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "netstat -ano | findstr ':3000'" 2>/dev/null || echo "")
 
             if [ -n "$PORT_CHECK" ]; then
               echo "✅ Frontend service started successfully! Port 3000 is listening"
@@ -172,7 +172,7 @@ jobs:
             echo "Waiting for frontend service... ($i/$MAX_RETRIES)"
 
             # 如果是最后一次重试，显示错误日志
-            if [ $i -eq $MAX_RETRIES ]; then
+            if [ $i -eq 30 ]; then
               echo "显示错误日志:"
               sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\logs\\frontend-error.log' -Tail 30 -ErrorAction SilentlyContinue\""
             fi
