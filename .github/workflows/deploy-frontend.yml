@@ -158,11 +158,12 @@ jobs:
           RETRY_INTERVAL=5
 
           for i in $(seq 1 $MAX_RETRIES); do
-            # 检查端口是否在监听（使用 PowerShell 更可靠）
-            PORT_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"(netstat -ano | findstr ':3000').Count\"" 2>/dev/null || echo "0")
+            # 检查端口是否在监听
+            PORT_CHECK=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "netstat -ano | findstr ':3000'" 2>/dev/null)
 
-            if [ "$PORT_CHECK" -gt 0 ] 2>/dev/null; then
+            if [ -n "$PORT_CHECK" ]; then
               echo "✅ Frontend service started successfully! Port 3000 is listening"
+              echo "$PORT_CHECK"
               # 显示日志最后几行
               sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -Command \"Get-Content '$WIN_PATH\\logs\\frontend.log' -Tail 10 -ErrorAction SilentlyContinue\""
               exit 0
