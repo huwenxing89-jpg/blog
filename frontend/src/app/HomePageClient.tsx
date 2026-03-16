@@ -292,7 +292,7 @@ function HeroSection() {
                 : 'border-gray-300 text-gray-700 hover:border-violet-500/50 hover:text-violet-600 dark:border-gray-700 dark:text-gray-300'
             }`}
           >
-            关于我
+            关于
           </Link>
         </div>
 

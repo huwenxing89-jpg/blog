@@ -162,7 +162,7 @@ export default function AboutPage() {
               isTech ? 'font-["Orbitron"]' : ''
             }`}>
               <span className={isTech ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-400 to-cyan-400' : 'gradient-text'}>
-                关于我
+                关于
               </span>
             </h1>
 

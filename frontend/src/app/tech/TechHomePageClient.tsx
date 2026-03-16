@@ -233,7 +233,7 @@ function HeroSection() {
             href="/about"
             className="group px-8 py-4 border border-gray-700 rounded-lg font-['Space_Grotesk'] font-semibold text-gray-300 hover:border-cyan-500/50 hover:text-white transition-all hover:scale-105"
           >
-            关于我
+            关于
           </Link>
         </div>
 
