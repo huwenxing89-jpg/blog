@@ -237,7 +237,7 @@ function TagDetailContent({ slug }: { slug: string }) {
 
       <main>
         {/* Hero Header */}
-        <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden pt-20">
           {isTech ? (
             <>
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(0,245,212,0.15),transparent)]" />
@@ -249,7 +249,7 @@ function TagDetailContent({ slug }: { slug: string }) {
 
           <div className="relative z-10 text-center px-6">
             {/* 面包屑 */}
-            <nav className={`flex items-center justify-center gap-2 text-sm mb-8 ${
+            <nav className={`flex flex-wrap items-center justify-center gap-2 text-sm mb-8 ${
               isTech ? 'text-gray-500' : 'text-gray-600 dark:text-gray-400'
             }`}>
               <Link href="/" className="hover:text-white transition-colors">首页</Link>

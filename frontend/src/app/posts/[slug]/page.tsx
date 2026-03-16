@@ -351,9 +351,9 @@ function PostDetailContent({ slug }: { slug: string }) {
         {/* Article Header */}
         <article className="relative">
           {/* Header */}
-          <div className="max-w-4xl mx-auto px-6 py-12 md:py-16">
+          <div className="max-w-4xl mx-auto px-6 pt-28 md:pt-32 pb-12 md:pb-16">
             {/* Breadcrumb */}
-            <nav className={`flex items-center gap-2 text-sm mb-6 ${
+            <nav className={`flex flex-wrap items-center gap-2 text-sm mb-6 ${
               isTech ? 'text-gray-500' : 'text-gray-600 dark:text-gray-400'
             }`}>
               <Link href="/" className="hover:text-inherit transition-colors">首页</Link>

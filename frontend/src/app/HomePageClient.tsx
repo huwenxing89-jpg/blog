@@ -207,7 +207,7 @@ function HeroSection() {
       )}
 
       {/* 内容 */}
-      <div className="relative z-10 text-center px-6 max-w-5xl">
+      <div className="relative z-10 text-center px-6 max-w-5xl pt-8 md:pt-0">
         {/* 标签 */}
         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border mb-8 ${
           isTech
