@@ -133,17 +133,12 @@ jobs:
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_FRONTEND }}
         run: |
-          # Upload start script
-          sshpass -p "$DEPLOY_PASSWORD" scp -o StrictHostKeyChecking=no deploy/scripts/start-frontend.ps1 ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/
-
           # 将路径转换为 Windows 格式
           WIN_PATH=$(echo "$DEPLOY_PATH" | sed 's/\//\\/g')
 
-          # Stop existing service
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '$WIN_PATH\\start-frontend.ps1' -Action Stop\""
-
-          # Start new service
-          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "powershell -ExecutionPolicy Bypass -Command \"& '$WIN_PATH\\start-frontend.ps1' -Action Start\""
+          # Restart service using NSSM (net stop & net start)
+          # Must be single line to ensure both commands execute
+          sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_SERVER} "cmd /c \"net stop BlogFrontend & ping -n 3 127.0.0.1 >nul & net start BlogFrontend\""
 
           echo "Frontend service restarted"
 
