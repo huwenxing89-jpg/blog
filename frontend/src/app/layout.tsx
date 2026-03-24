@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import QiankunBridge from '@/components/qiankun-bridge';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ThemeEffectsWrapper } from '@/components/ThemeEffectsWrapper';
 import { SettingsProvider } from '@/components/providers/settings-provider';
@@ -26,6 +27,7 @@ export default function RootLayout({
             themes={['simple', 'tech']}
           >
             <ThemeEffectsWrapper />
+            <QiankunBridge />
             {children}
           </ThemeProvider>
         </SettingsProvider>
