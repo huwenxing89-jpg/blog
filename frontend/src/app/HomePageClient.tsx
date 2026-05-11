@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useSettings } from '@/components/providers/settings-provider';
 import { ClipPathImage } from '@/components/ClipPathImage';
+import { useAuthStore } from '@/store/auth';
+import { Footer } from '@/components/layout/Footer';
 
 // ==================== 类型定义 ====================
 export interface Post {
@@ -49,6 +51,7 @@ function Navigation() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const { settings } = useSettings();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     setMounted(true);
@@ -123,8 +126,27 @@ function Navigation() {
           ))}
         </div>
 
-        {/* 主题切换 */}
+        {/* 右侧按钮 */}
         <div className="flex items-center gap-4">
+          {/* 管理端按钮 - 仅管理员可见 */}
+          {user?.role?.toLowerCase() === 'admin' && (
+            <Link
+              href="/admin/posts"
+              className={`hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                isTech
+                  ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20'
+                  : 'bg-violet-500/10 text-violet-600 hover:bg-violet-500/20 dark:text-violet-400'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              切换到管理端
+            </Link>
+          )}
+
+          {/* 主题切换 */}
           <button
             onClick={() => setTheme(isTech ? 'light' : 'tech')}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
@@ -684,94 +706,6 @@ function TagCloud({ tags }: { tags: Tag[] }) {
         </div>
       </div>
     </section>
-  );
-}
-
-// 页脚
-function Footer() {
-  const { theme } = useTheme();
-  const { settings } = useSettings();
-  const isTech = theme === 'tech';
-
-  return (
-    <footer className={`relative py-16 px-6 border-t ${
-      isTech
-        ? 'border-gray-800/50'
-        : 'border-gray-200 dark:border-gray-800'
-    }`}>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          {/* 左侧 */}
-          <div className="flex flex-col items-center md:items-start gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 relative">
-                <div className={`absolute inset-0 bg-gradient-to-br rounded rotate-45 ${
-                  isTech ? 'from-cyan-400 to-emerald-400' : 'from-violet-500 to-blue-500'
-                }`} />
-                <div className={`absolute inset-0 rounded-sm rotate-45 ${
-                  isTech ? 'bg-[#030305]' : 'bg-white'
-                }`} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className={`font-bold text-xs ${
-                    isTech ? 'text-cyan-400' : 'text-violet-600'
-                  }`}>&lt;/&gt;</span>
-                </div>
-              </div>
-              <span className={`text-lg font-bold ${
-                isTech ? 'font-["Orbitron"] text-white' : 'text-gray-900 dark:text-white'
-              }`}>{settings.siteName}</span>
-            </div>
-            <p className={`text-sm ${
-              isTech
-                ? 'font-["Space_Grotesk"] text-gray-600'
-                : 'text-gray-600 dark:text-gray-400'
-            }`}>
-              用代码构建未来
-            </p>
-          </div>
-
-          {/* 中间链接 */}
-          <div className="flex items-center gap-8">
-            {[
-              { href: '/posts', label: '文章' },
-              { href: '/series', label: '专栏' },
-              { href: '/tags', label: '标签' },
-              { href: '/about', label: '关于' },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm transition-colors ${
-                  isTech
-                    ? 'font-["Space_Grotesk"] text-gray-400 hover:text-cyan-400'
-                    : 'text-gray-600 hover:text-violet-600 dark:text-gray-400'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* 右侧版权 */}
-          <div className="flex flex-col items-center md:items-end gap-2">
-            <p className={`text-sm ${
-              isTech
-                ? 'font-["Space_Grotesk"] text-gray-600'
-                : 'text-gray-600 dark:text-gray-400'
-            }`}>
-              © 2026 Huwx.BLOG
-            </p>
-            <p className={`text-xs ${
-              isTech
-                ? 'font-["JetBrains_Mono"] text-gray-700'
-                : 'text-gray-500 dark:text-gray-500 font-mono'
-            }`}>
-              Built with Next.js & Spring Boot
-            </p>
-          </div>
-        </div>
-      </div>
-    </footer>
   );
 }
 

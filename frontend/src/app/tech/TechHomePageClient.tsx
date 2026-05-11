@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Footer } from '@/components/layout/Footer';
 
 // ==================== 类型定义 ====================
 export interface Post {
@@ -511,62 +512,6 @@ function TagCloud({ tags }: { tags: Tag[] }) {
         </div>
       </div>
     </section>
-  );
-}
-
-// 页脚
-function Footer() {
-  return (
-    <footer className="relative py-16 px-6 border-t border-gray-800/50">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          {/* 左侧 */}
-          <div className="flex flex-col items-center md:items-start gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-emerald-400 rounded rotate-45" />
-                <div className="absolute inset-0 bg-[#030305] rounded-sm rotate-45" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-cyan-400 font-bold text-xs">&lt;/&gt;</span>
-                </div>
-              </div>
-              <span className="font-['Orbitron'] text-lg font-bold text-white">DEV.LOG</span>
-            </div>
-            <p className="font-['Space_Grotesk'] text-sm text-gray-600">
-              用代码构建未来
-            </p>
-          </div>
-
-          {/* 中间链接 */}
-          <div className="flex items-center gap-8">
-            {[
-              { href: '/posts', label: '文章' },
-              { href: '/series', label: '专栏' },
-              { href: '/tags', label: '标签' },
-              { href: '/about', label: '关于' },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="font-['Space_Grotesk'] text-sm text-gray-400 hover:text-cyan-400 transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* 右侧版权 */}
-          <div className="flex flex-col items-center md:items-end gap-2">
-            <p className="font-['Space_Grotesk'] text-sm text-gray-600">
-              © 2026 Huwx.BLOG
-            </p>
-            <p className="font-['JetBrains_Mono'] text-xs text-gray-700">
-              Built with Next.js & Spring Boot
-            </p>
-          </div>
-        </div>
-      </div>
-    </footer>
   );
 }
 

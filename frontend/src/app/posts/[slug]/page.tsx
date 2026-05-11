@@ -8,6 +8,7 @@ import request from '@/lib/request';
 import { MarkdownRenderer } from '@/components/markdown/MarkdownRenderer';
 import { useSettings } from '@/components/providers/settings-provider';
 import { getImageUrl } from '@/lib/utils';
+import { Footer } from '@/components/layout/Footer';
 
 interface Post {
   id: number;
@@ -552,28 +553,7 @@ function PostDetailContent({ slug }: { slug: string }) {
       </main>
 
       {/* Footer */}
-      <footer className={`py-12 px-6 border-t text-center ${
-        isTech
-          ? 'border-gray-800/50'
-          : 'border-gray-200 dark:border-gray-800'
-      }`}>
-        <div className="max-w-7xl mx-auto">
-          <p className={`text-sm mb-2 ${
-            isTech
-              ? 'font-["Space_Grotesk"] text-gray-600'
-              : 'text-gray-600 dark:text-gray-400'
-          }`}>
-            © 2026 Huwx.BLOG
-          </p>
-          <p className={`text-xs ${
-            isTech
-              ? 'font-["JetBrains_Mono"] text-gray-700'
-              : 'text-gray-500 font-mono'
-          }`}>
-            Built with Next.js & Spring Boot
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

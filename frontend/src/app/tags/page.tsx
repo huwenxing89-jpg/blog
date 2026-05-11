@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import request from '@/lib/request';
 import { useSettings } from '@/components/providers/settings-provider';
+import { Footer } from '@/components/layout/Footer';
 
 interface Tag {
   id: number;
@@ -285,28 +286,7 @@ export default function TagsPage() {
       </main>
 
       {/* 页脚 */}
-      <footer className={`py-12 px-6 border-t text-center ${
-        isTech
-          ? 'border-gray-800/50'
-          : 'border-gray-200 dark:border-gray-800'
-      }`}>
-        <div className="max-w-7xl mx-auto">
-          <p className={`text-sm mb-2 ${
-            isTech
-              ? 'font-["Space_Grotesk"] text-gray-600'
-              : 'text-gray-600 dark:text-gray-400'
-          }`}>
-            © 2026 Huwx.BLOG
-          </p>
-          <p className={`text-xs ${
-            isTech
-              ? 'font-["JetBrains_Mono"] text-gray-700'
-              : 'text-gray-500 font-mono'
-          }`}>
-            Built with Next.js & Spring Boot
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
