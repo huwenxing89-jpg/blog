@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ThemeEffectsWrapper } from '@/components/ThemeEffectsWrapper';
@@ -29,7 +30,9 @@ export default function RootLayout({
             themes={['simple', 'tech']}
           >
             <ThemeEffectsWrapper />
-            <IFrameRouteSync />
+            <Suspense fallback={null}>
+              <IFrameRouteSync />
+            </Suspense>
             {children}
           </ThemeProvider>
           </SettingsProvider>
