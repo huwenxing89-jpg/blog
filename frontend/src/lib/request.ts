@@ -1,5 +1,20 @@
 import axios, { AxiosError } from 'axios';
 
+// 从 URL 参数读取 token（用于 iframe 跨域 token 共享）
+if (typeof window !== 'undefined') {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromUrl = urlParams.get('_token');
+  if (tokenFromUrl) {
+    localStorage.setItem('token', tokenFromUrl);
+    // 清理 URL 中的 token 参数
+    urlParams.delete('_token');
+    const newUrl = urlParams.toString()
+      ? `${window.location.pathname}?${urlParams.toString()}`
+      : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+  }
+}
+
 const request = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8088/api',
   timeout: 10000,

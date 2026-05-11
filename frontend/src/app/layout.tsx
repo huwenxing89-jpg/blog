@@ -3,6 +3,8 @@ import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ThemeEffectsWrapper } from '@/components/ThemeEffectsWrapper';
 import { SettingsProvider } from '@/components/providers/settings-provider';
+import { AuthProvider } from '@/components/providers/auth-provider';
+import { IFrameRouteSync } from '@/components/iframe-sync';
 
 export const metadata: Metadata = {
   title: 'huwx BLOG',
@@ -17,8 +19,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <SettingsProvider>
-          <ThemeProvider
+        <AuthProvider>
+          <SettingsProvider>
+            <ThemeProvider
             attribute="class"
             defaultTheme="tech"
             enableSystem={false}
@@ -26,9 +29,11 @@ export default function RootLayout({
             themes={['simple', 'tech']}
           >
             <ThemeEffectsWrapper />
+            <IFrameRouteSync />
             {children}
           </ThemeProvider>
-        </SettingsProvider>
+          </SettingsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

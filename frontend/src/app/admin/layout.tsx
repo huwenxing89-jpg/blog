@@ -67,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       fontFamily: '-apple-system, BlinkMacSystemFont, Inter, Noto Sans SC, system-ui, sans-serif',
       backgroundColor: '#ffffff'
     }}>
-      <aside className="w-64 bg-gray-50 border-r">
+      <aside className="relative w-64 bg-gray-50 border-r min-h-screen">
         <div className="p-4 border-b">
           <h1 className="text-xl font-bold">博客管理</h1>
         </div>
@@ -89,6 +89,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         <div className="absolute bottom-0 w-64 p-4 border-t">
+          <Link
+            href="/"
+            className="flex items-center gap-2 py-2 px-3 mb-3 rounded-md text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            返回前台
+          </Link>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">{user.name}</span>
             <button
