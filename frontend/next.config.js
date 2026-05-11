@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // 开发模式下不使用 output: export
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -9,6 +10,7 @@ const nextConfig = {
       },
     ],
   },
+  // API 代理
   async rewrites() {
     return [
       {

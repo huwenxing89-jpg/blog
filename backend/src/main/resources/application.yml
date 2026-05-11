@@ -4,11 +4,26 @@ server:
 spring:
   application:
     name: blog-backend
+  # 数据源配置（双数据源：业务库 + 主应用认证库）
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/blog?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
+    # 主数据源 - 业务数据库
+    primary:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3306/blog?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+      username: root
+      password: 123456
+      hikari:
+        minimum-idle: 5
+        maximum-pool-size: 20
+    # 认证数据源 - 主应用数据库（qiankun）
+    auth:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3306/qiankun?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+      username: root
+      password: 123456
+      hikari:
+        minimum-idle: 2
+        maximum-pool-size: 10
   jackson:
     time-zone: GMT+8
     date-format: yyyy-MM-dd HH:mm:ss
@@ -37,7 +52,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 jwt:
-  secret: blog-secret-key-at-least-256-bits-long-for-security
+  secret: qiankun-micro-frontend-platform-jwt-secret-key-2026
   expiration: 604800000
 
 springdoc:
